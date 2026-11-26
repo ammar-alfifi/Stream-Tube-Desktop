@@ -36,9 +36,10 @@ jobs:
         run: cargo install cargo-ndk --version 4.1.2 --locked
 
       - name: Check core for Android
-        env:
-          LIBCLANG_PATH: ${{ env.ANDROID_NDK_HOME }}/toolchains/llvm/prebuilt/linux-x86_64/musl/lib
-        run: cargo ndk -t arm64-v8a -P 26 check -p streamtube-core --locked
+        run: |
+          export LIBCLANG_PATH="$(dirname "$(find "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt" -name libclang.so -print -quit)")"
+          test -f "$LIBCLANG_PATH/libclang.so"
+          cargo ndk -t arm64-v8a -P 26 check -p streamtube-core --locked
 
   linux:
     # the oldest supported Ubuntu keeps the binary compatible with older glibc
