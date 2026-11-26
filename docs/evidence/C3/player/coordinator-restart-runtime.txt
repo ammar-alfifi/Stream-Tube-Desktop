@@ -1,0 +1,21 @@
+11-26 18:15:05.560 12783 12826 I streamtube: streamtube_android::player: player::init: av_jni_set_java_vm ok
+11-26 18:15:05.560 12783 12826 I streamtube: streamtube_android::player: player: mpv_surface platform view factory registered
+11-26 18:15:20.053 12783 12826 I streamtube: streamtube_android::player: player: opening 20 Must-have Kitchen Gadgets I Bought On Amazon! (GUD1uXn3-Gs)
+11-26 18:15:20.058 12783 12783 I StreamTubeSurfaceView: created for view_id=1
+11-26 18:15:20.083 12783 12783 I StreamTubeSurfaceView: surfaceCreated id=1 valid=true
+11-26 18:15:20.083 12783 12783 I streamtube: streamtube_android::player: StreamTubeSurfaceView surfaceCreated: view_id=1
+11-26 18:15:20.083 12783 12783 I StreamTubeSurfaceView: surfaceChanged id=1 720x405
+11-26 18:15:20.421 12783 12826 I streamtube: streamtube_android::player: streams: innertube (18 video-only, 4 audio, 1 muxed, hls=false, live=false)
+11-26 18:15:20.434 12783 12826 I streamtube: streamtube_android::player: mpv set_surface ok
+11-26 18:15:20.591 12783 12826 I streamtube: streamtube_android::player: sponsorblock: 1 segments for GUD1uXn3-Gs
+11-26 18:15:21.317 12783 13116 I streamtube: streamtube_android::player: googlevideo range probe ok (1048576 bytes)
+11-26 18:15:21.773 12783 13116 I streamtube: streamtube_android::player: googlevideo range probe ok (1048576 bytes)
+11-26 18:15:21.773 12783 13116 I streamtube: streamtube_android::player: source: adaptive Some((1080, "avc1.640028")) + audio Some("opus") (probe ok)
+11-26 18:15:21.774 12783 12826 I streamtube: streamtube_android::player: loadfile ok
+11-26 18:15:23.179 12783 12826 I streamtube: streamtube_android::player: mpv file loaded after 3126 ms: vo=Some("gpu") hwdec=Some("mediacodec") video-format=Some("h264") ao=None audio-codec=Some("Opus (Opus Interactive Audio Codec)")
+11-26 18:15:23.179 12783 12826 I streamtube: streamtube_android::player: time-pos 0.0s / 651.0s (paused=false)
+11-26 18:15:28.832 12783 12826 I streamtube: streamtube_android::player: time-pos 5.0s / 650.9s (paused=false)
+11-26 18:15:29.401 12783 12826 I streamtube: streamtube_android::player: sponsor skip: interaction 5.558s..8.978s → seeking to 8.978
+11-26 18:15:30.824 12783 12826 I streamtube: streamtube_android::player: time-pos 10.0s / 650.9s (paused=false)
+11-26 18:15:34.139 12783 12826 I streamtube: streamtube_android::player: time-pos 13.3s / 650.9s (paused=false)
+11-26 18:15:39.905 12783 12826 I streamtube: streamtube_android::player: sponsor skip: interaction 5.558s..8.978s → seeking to 8.978

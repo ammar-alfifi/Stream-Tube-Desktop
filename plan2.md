@@ -99,7 +99,7 @@ WHILE الميزانية متبقية:
 
 - [x] A1 (الأسرع): جرّب عميل **android_vr** ثم **visionOS** في `streams.rs` — قد يعيدان روابط مباشرة بلا nsig. أثبت ستريم صالحاً على المحاكي.
 - [x] A2 (المتانة): ضمّن **rquickjs** (QuickJS عبر NDK؛ Boa احتياطي بطيء)، صِل `yt.solver.core/lib.min.js` بخط الاستخراج، ووفّر جسر الدوال المضيفة التي تتوقعه السكربتات. أثبت حل تحدّي nsig واحد حقيقي.
-- [ ] A3: آلية تحديث سكربتات الحلّ عند تغيّر مشغّل يوتيوب (مثبّتة + قابلة للتحديث).
+- [x] A3: آلية تحديث سكربتات الحلّ عند تغيّر مشغّل يوتيوب (مثبّتة + قابلة للتحديث). **النواة والتحقق الحي مكتملان؛ إعدادات UI لاحقًا.**
 - [ ] A4: معالجة PO Tokens / «Sign in to confirm you're not a bot» (مزوّد WebView مصغّر أو كوكيز).
 - [x] A5 (شبكة أمان للاختبار): خط تشغيل بفيديو HLS/MP4 عام معروف الصلاحية، للتحقق من المشغّل حتى لو حُجب يوتيوب (DR-2).
 **قبول:** ستريم يوتيوب حقيقي يعمل بلا yt-dlp، أو توثيق الحاجز + إثبات الخط بفيديو عام.
@@ -116,7 +116,7 @@ WHILE الميزانية متبقية:
 ### Track C — التشغيل بكامل الأداء
 - [x] C1 **افصل الجزء غير المرتبط بالمنصة من `controller.rs`** (آلة الحالة، الاستئناف، الطابور، منطق SponsorBlock) إلى النواة أو crate تشغيل مشترك — قبل بناء غلاف أندرويد، وإلا تكرّر المنطق.
 - [ ] C2 ابنِ `libmpv.so` بسكربتات mpv-android (FFmpeg+libplacebo داخلياً) في CI بمثبّت SHA-256. سمّه `libmpv.so` حرفياً وحمّله من `nativeLibraryDir` (عدّل LIBRARY_NAMES بـ cfg).
-- [ ] C3 الفيديو الرئيسي في SurfaceView (platform view): `hwdec=mediacodec` + `vo=mediacodec_embed`+wid، أو `vo=gpu`+`gpu-context=android`؛ احتياطي mediacodec-copy (DR-3). راجع MPVLib.java.
+- [x] C3 الفيديو الرئيسي في SurfaceView (platform view): `hwdec=mediacodec` + `vo=gpu`+`gpu-context=android`؛ احتياطي mediacodec-copy (DR-3). **مثبت على المحاكي؛ الجهاز الحقيقي معلّق.**
 - [ ] C4 أبقِ sw render للمعاينات الصغيرة فقط.
 - [ ] C5 تركيب التحكم/annotations فوق سطح الفيديو (platform-views / SurfaceControl).
 - [ ] C6 تكامل النظام: ForegroundService(mediaPlayback)+MediaSession+AudioFocus+becoming-noisy+PiP+FLAG_KEEP_SCREEN_ON (اعزل SetThreadExecutionState خلف cfg)+تشغيل خلفية.
@@ -148,8 +148,8 @@ WHILE الميزانية متبقية:
 - [ ] NDK r27+، 16KB، minSdk 26، targetSdk 35/36، ABI: arm64-v8a + x86_64 (armv7 خارج v1).
 - [ ] أذونات minimal: INTERNET, ACCESS_NETWORK_STATE, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, FOREGROUND_SERVICE_DATA_SYNC, POST_NOTIFICATIONS(runtime), WAKE_LOCK, REQUEST_INSTALL_PACKAGES.
 - [ ] R8 + تقسيم ABI + تقليص خط Emoji.
-- [ ] CI على الـfork: android.yml (cargo-ndk+Gradle+APK+SHA256SUMS+attestation). إن تعذّر الدفع → تحقق محلي مكافئ موثّق.
-- [ ] توقيع ذاتي (§7) + إخراج APK + INSTALL.md.
+- [x] CI على الـfork: android.yml (cargo-ndk+Gradle+APK+SHA256SUMS+attestation). إن تعذّر الدفع → تحقق محلي مكافئ موثّق.
+- [ ] توقيع ذاتي (§7) + إخراج APK + INSTALL.md. **التوقيع وINSTALL جاهزان؛ APK release النهائي لم يُبنَ بعد.**
 
 ---
 

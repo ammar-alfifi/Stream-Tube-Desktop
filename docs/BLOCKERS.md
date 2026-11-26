@@ -14,4 +14,11 @@
 - Impact: B6 cannot pass on the current debug shell even before playback.
 - Next viable route: measure a release build, then bound thumbnail/image caching and Home feed size if the release profile remains over budget.
 
+## PO-token stream failures remain intermittent
+
+- Reproduced: adaptive googlevideo range probes intermittently fail, and long playback can stall when a later 8 MiB chunk is refused. Muxed 360p fallback works, and later 1080p EDL sessions also pass.
+- Evidence: `docs/evidence/C3/player/coordinator-final-runtime.txt` and `coordinator-sponsorblock-runtime.txt`.
+- Impact: A4 and reliable long-form 1080p playback remain open.
+- Next viable route: PO-token provider/account cookies and proxy retry/chunk policy.
+
 No other external blocker is currently confirmed. Update this file only with a reproduced failure, attempts, and the next viable route.

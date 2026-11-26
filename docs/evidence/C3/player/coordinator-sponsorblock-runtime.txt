@@ -1,0 +1,18 @@
+11-26 17:15:07.681  8561  8580 I streamtube: streamtube_android::player: player::init: av_jni_set_java_vm ok
+11-26 17:15:07.681  8561  8580 I streamtube: streamtube_android::player: player: mpv_surface platform view factory registered
+11-26 17:15:08.051  8561  8580 D streamtube: wgpu_core::device::resource: configuring surface with SurfaceConfiguration { usage: TextureUsages(RENDER_ATTACHMENT), format: Rgba8Unorm, color_space: Auto, width: 720, height: 1600, present_mode: Mailbox, desired_maximum_frame_latency: 2, alpha_mode: Inherit, view_formats: [] }
+11-26 17:16:01.673  8561  8580 I streamtube: streamtube_android::player: player: opening 20 Must-have Kitchen Gadgets I Bought On Amazon! (GUD1uXn3-Gs)
+11-26 17:16:01.703  8561  8561 I streamtube: streamtube_android::player: StreamTubeSurfaceView surfaceCreated: view_id=1 global_ref=0x32a6
+11-26 17:16:02.181  8561  8580 I streamtube: streamtube_android::player: sponsorblock: 1 segments for GUD1uXn3-Gs
+11-26 17:16:02.294  8561  8580 I streamtube: streamtube_android::player: streams: innertube (18 video-only, 4 audio, 1 muxed, hls=false, live=false)
+11-26 17:16:02.307  8561  8580 I streamtube: streamtube_android::player: mpv set_surface ok (wid=12966)
+11-26 17:16:03.633  8561  8874 I streamtube: streamtube_android::player: googlevideo range probe ok (1048576 bytes)
+11-26 17:16:05.494  8561  8874 I streamtube: streamtube_android::player: googlevideo range probe ok (1048576 bytes)
+11-26 17:16:05.494  8561  8874 I streamtube: streamtube_android::player: source: adaptive Some((1080, "avc1.640028")) + audio Some("opus") (probe ok)
+11-26 17:16:05.494  8561  8580 I streamtube: streamtube_android::player: loadfile ok: edl://!no_clip;!no_chapters;%75%[LOCAL_PROXY_URL]
+11-26 17:16:06.945  8561  8580 I streamtube: streamtube_android::player: mpv file loaded after 5272 ms: vo=Some("gpu") hwdec=Some("mediacodec") video-format=Some("h264") ao=None audio-codec=Some("Opus (Opus Interactive Audio Codec)") path=edl://!no_clip;!no_chapters;%75%[LOCAL_PROXY_URL]/s/1;!new_stream;
+11-26 17:16:06.945  8561  8580 I streamtube: streamtube_android::player: time-pos 0.0s / 651.0s (paused=false)
+11-26 17:16:12.543  8561  8580 I streamtube: streamtube_android::player: time-pos 5.0s / 650.9s (paused=false)
+11-26 17:16:13.123  8561  8580 I streamtube: streamtube_android::player: sponsor skip: interaction 5.558s..8.978s → seeking to 8.978
+11-26 17:16:14.463  8561  8580 I streamtube: streamtube_android::player: time-pos 10.0s / 650.9s (paused=false)
+11-26 17:16:19.457  8561  8580 I streamtube: streamtube_android::player: time-pos 15.0s / 650.9s (paused=false)

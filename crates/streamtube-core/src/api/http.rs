@@ -6,8 +6,7 @@ use std::time::Duration;
 use ureq::config::{ConfigBuilder, IpFamily};
 use ureq::typestate::AgentScope;
 
-pub const BROWSER_UA: &str =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+pub const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -93,6 +92,34 @@ mod tests {
     }
 
     #[test]
+    fn limited_download_rejects_an_oversized_body() {
+        use std::io::{BufRead, BufReader, Write};
+        use std::net::{Ipv4Addr, TcpListener};
+
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let url = format!("http://{}/limited", listener.local_addr().unwrap());
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = BufReader::new(&mut stream);
+            let mut line = String::new();
+            loop {
+                line.clear();
+                assert!(request.read_line(&mut line).unwrap() > 0);
+                if line == "\r\n" {
+                    break;
+                }
+            }
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\n\r\n12345678",
+                )
+                .unwrap();
+        });
+        assert!(super::get_bytes_limited(&url, &[], 4).is_err());
+        server.join().unwrap();
+    }
+
+    #[test]
     #[ignore = "streams a local response for over 30 seconds"]
     fn slow_download_can_keep_making_progress() {
         use std::io::{BufRead, BufReader, Write};
@@ -103,7 +130,9 @@ mod tests {
         let url = format!("http://{}/download", listener.local_addr().unwrap());
         let server = std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
-            stream.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(10)))
+                .unwrap();
             let mut request = BufReader::new(&mut stream);
             let mut line = String::new();
             loop {
@@ -113,7 +142,9 @@ mod tests {
                     break;
                 }
             }
-            stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\ns").unwrap();
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\ns")
+                .unwrap();
             for byte in b"low!" {
                 std::thread::sleep(Duration::from_secs(8));
                 stream.write_all(&[*byte]).unwrap();
@@ -126,7 +157,8 @@ mod tests {
             assert!(done > progress);
             progress = done;
             true
-        }).unwrap();
+        })
+        .unwrap();
         server.join().unwrap();
         assert_eq!(bytes, b"slow!");
         assert_eq!(progress, 5);
@@ -134,6 +166,10 @@ mod tests {
 }
 
 pub fn get_bytes(url: &str, headers: &[(&str, &str)]) -> Result<Vec<u8>> {
+    get_bytes_limited(url, headers, 64 * 1024 * 1024)
+}
+
+pub fn get_bytes_limited(url: &str, headers: &[(&str, &str)], max_bytes: usize) -> Result<Vec<u8>> {
     let mut req = agent().get(url);
     for (k, v) in headers {
         req = req.header(*k, *v);
@@ -143,9 +179,12 @@ pub fn get_bytes(url: &str, headers: &[(&str, &str)]) -> Result<Vec<u8>> {
     let mut buf = Vec::new();
     resp.body_mut()
         .with_config()
-        .limit(64 * 1024 * 1024)
+        .limit((max_bytes as u64).saturating_add(1))
         .reader()
         .read_to_end(&mut buf)?;
+    if buf.len() > max_bytes {
+        return Err(anyhow!("response for {url} exceeds {max_bytes} bytes"));
+    }
     if status >= 400 {
         return Err(anyhow!("HTTP {status} for {url}"));
     }
@@ -163,7 +202,10 @@ pub fn get_json(url: &str) -> Result<Value> {
 
 /// Returns (status, json)
 pub fn get_json_status(url: &str) -> Result<(u16, Value)> {
-    let mut resp = agent().get(url).header("Accept", "application/json").call()?;
+    let mut resp = agent()
+        .get(url)
+        .header("Accept", "application/json")
+        .call()?;
     let status = resp.status().as_u16();
     let text = resp.body_mut().read_to_string().unwrap_or_default();
     Ok((status, serde_json::from_str(&text).unwrap_or(Value::Null)))
@@ -184,7 +226,10 @@ pub fn post_json(url: &str, body: &Value, headers: &[(&str, &str)]) -> Result<Va
         .limit(64 * 1024 * 1024)
         .read_to_string()?;
     if status >= 400 {
-        return Err(anyhow!("HTTP {status}: {}", text.chars().take(300).collect::<String>()));
+        return Err(anyhow!(
+            "HTTP {status}: {}",
+            text.chars().take(300).collect::<String>()
+        ));
     }
     serde_json::from_str(&text).context("invalid json")
 }
@@ -195,7 +240,9 @@ pub fn post_json_status(url: &str, body: &Value, headers: &[(&str, &str)]) -> Re
     for (k, v) in headers {
         req = req.header(*k, *v);
     }
-    let mut resp = req.send(serde_json::to_vec(body)?).with_context(|| format!("POST {url}"))?;
+    let mut resp = req
+        .send(serde_json::to_vec(body)?)
+        .with_context(|| format!("POST {url}"))?;
     let status = resp.status().as_u16();
     let text = resp.body_mut().read_to_string().unwrap_or_default();
     Ok((status, serde_json::from_str(&text).unwrap_or(Value::Null)))
@@ -248,7 +295,9 @@ pub fn urlencode(s: &str) -> String {
     let mut o = String::with_capacity(s.len() * 3);
     for b in s.bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => o.push(b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                o.push(b as char)
+            }
             _ => o.push_str(&format!("%{b:02X}")),
         }
     }
@@ -263,7 +312,8 @@ pub fn urldecode(s: &str) -> String {
     while i < b.len() {
         match b[i] {
             b'%' if i + 2 < b.len() => {
-                match u8::from_str_radix(std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or("zz"), 16) {
+                match u8::from_str_radix(std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or("zz"), 16)
+                {
                     Ok(v) => {
                         out.push(v);
                         i += 3;

@@ -177,6 +177,9 @@ public class GpuiPlatformView {
             case "video_player":
                 return createVideoPlayerView(activity, params);
 
+            case "mpv_surface":
+                return createMpvSurfaceView(activity, params);
+
             case "webview":
                 return createWebViewView(activity, params);
 
@@ -207,6 +210,20 @@ public class GpuiPlatformView {
         }
 
         return GpuiVideoPlayer.createVideoSurface(activity, playerId);
+    }
+
+    /**
+     * Create a SurfaceView whose Surface is reported to libmpv on the Rust
+     * side (see {@link StreamTubeSurfaceView}).
+     */
+    private static View createMpvSurfaceView(Activity activity, Map<String, String> params) {
+        long viewId = 0;
+        try {
+            viewId = Long.parseLong(params.getOrDefault("view_id", "0"));
+        } catch (NumberFormatException e) {
+            Log.w(TAG, "Invalid view_id in creation params");
+        }
+        return new StreamTubeSurfaceView(activity, viewId);
     }
 
     /**

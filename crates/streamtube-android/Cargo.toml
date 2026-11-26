@@ -28,6 +28,10 @@ gpui-mobile = { git = "https://github.com/itsbalamurali/gpui-mobile", rev = "635
     "clipboard",
     "notifications",
 ] }
+# Same version gpui-mobile already resolves (jni 0.22 in Cargo.lock): the
+# StreamTubeSurfaceView native callbacks (Java → Rust surface events) are
+# declared directly against the jni crate. No new packages enter the lock.
+jni = "0.22"
 anyhow = "1"
 futures = "0.3"
 log = "0.4"

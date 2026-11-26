@@ -22,11 +22,13 @@
 // into this .so.
 extern crate gpui_mobile;
 
+mod player;
+
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::Root;
+use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::scroll::ScrollableElement;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
@@ -66,6 +68,10 @@ fn android_main(app: android_activity::AndroidApp) {
 
     let _platform = gpui_mobile::android::jni::init_platform(&app);
     log::info!("android_main: platform initialised");
+    // Track C3: FFmpeg's MediaCodec helpers need the JavaVM, and the
+    // "mpv_surface" platform view type must exist before a player opens.
+    player::init();
+    player::register_platform_view();
     let shared = match gpui_mobile::android::jni::shared_platform() {
         Some(s) => s,
         None => {
@@ -80,7 +86,10 @@ fn android_main(app: android_activity::AndroidApp) {
             gpui_kit::init(cx);
             gpui_kit::component::Theme::change(gpui_kit::component::ThemeMode::Dark, None, cx);
             match cx.open_window(
-                WindowOptions { window_bounds: None, ..Default::default() },
+                WindowOptions {
+                    window_bounds: None,
+                    ..Default::default()
+                },
                 |window, cx| {
                     let shell = cx.new(|cx| Shell::new(window, cx));
                     cx.new(|cx| Root::new(shell, window, cx))
@@ -105,7 +114,9 @@ pub struct UreqHttp {
 
 impl UreqHttp {
     pub fn new() -> Arc<Self> {
-        Arc::new(Self { ua: http_client::http::HeaderValue::from_static(streamtube_core::api::http::BROWSER_UA) })
+        Arc::new(Self {
+            ua: http_client::http::HeaderValue::from_static(streamtube_core::api::http::BROWSER_UA),
+        })
     }
 }
 
@@ -121,7 +132,10 @@ impl http_client::HttpClient for UreqHttp {
     fn send(
         &self,
         req: http_client::Request<http_client::AsyncBody>,
-    ) -> futures::future::BoxFuture<'static, anyhow::Result<http_client::Response<http_client::AsyncBody>>> {
+    ) -> futures::future::BoxFuture<
+        'static,
+        anyhow::Result<http_client::Response<http_client::AsyncBody>>,
+    > {
         let uri = req.uri().to_string();
         Box::pin(async move {
             let bytes = blocking(move || streamtube_core::api::http::get_bytes(&uri, &[])).await?;
@@ -148,12 +162,12 @@ pub fn blocking<T: Send + 'static>(
 
 // ───────────────────────────── palette ─────────────────────────────
 
-const BG: u32 = 0x0f0f0f;
-const SURFACE: u32 = 0x212121;
-const BORDER: u32 = 0x303030;
-const TEXT: u32 = 0xf1f1f1;
-const TEXT2: u32 = 0xaaaaaa;
-const ACCENT: u32 = 0xff0033; // the store's default accent
+pub(crate) const BG: u32 = 0x0f0f0f;
+pub(crate) const SURFACE: u32 = 0x212121;
+pub(crate) const BORDER: u32 = 0x303030;
+pub(crate) const TEXT: u32 = 0xf1f1f1;
+pub(crate) const TEXT2: u32 = 0xaaaaaa;
+pub(crate) const ACCENT: u32 = 0xff0033; // the store's default accent
 
 // ───────────────────────────── the shell ─────────────────────────────
 
@@ -175,28 +189,41 @@ struct Shell {
     items: Load<Arc<Vec<Item>>>,
     continuation: Option<String>,
     serial: u64,
+    /// Open player (Track C3); the feed stays cached underneath for instant back.
+    player: Option<Entity<player::Player>>,
 }
 
 impl Shell {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let search = cx.new(|cx| InputState::new(window, cx).placeholder("Search YouTube"));
-        cx.subscribe_in(&search, window, |this, state, ev: &InputEvent, _window, cx| {
-            if let InputEvent::PressEnter { .. } = ev {
-                let q = state.read(cx).value().trim().to_string();
-                this.search_for(&q, cx);
-            }
-        })
+        cx.subscribe_in(
+            &search,
+            window,
+            |this, state, ev: &InputEvent, _window, cx| {
+                if let InputEvent::PressEnter { .. } = ev {
+                    let q = state.read(cx).value().trim().to_string();
+                    this.search_for(&q, cx);
+                }
+            },
+        )
         .detach();
-        let mut shell = Self { search, mode: Mode::Home, items: Load::Loading, continuation: None, serial: 0 };
+        let mut shell = Self {
+            search,
+            mode: Mode::Home,
+            items: Load::Loading,
+            continuation: None,
+            serial: 0,
+            player: None,
+        };
         // A `streamtube://search?q=…` deep link opens straight into search
         // results (the desktop's streamtube: scheme; more routes land with
         // Track F).
         if let Ok(Some(url)) = gpui_mobile::packages::deeplink::get_initial_link() {
             log::info!("deeplink: {url}");
-            if let Some(q) = url
-                .strip_prefix("streamtube://search")
-                .and_then(|rest| rest.strip_prefix("?q=").or_else(|| rest.strip_prefix("?query=")))
-            {
+            if let Some(q) = url.strip_prefix("streamtube://search").and_then(|rest| {
+                rest.strip_prefix("?q=")
+                    .or_else(|| rest.strip_prefix("?query="))
+            }) {
                 let q = streamtube_core::api::http::urldecode(q);
                 shell.search_for(&q, cx);
                 return shell;
@@ -221,9 +248,15 @@ impl Shell {
                     let hs: Vec<_> = innertube::EXPLORE
                         .iter()
                         .take(4)
-                        .map(|(_, id)| s.spawn(move || innertube::explore(id).map(|p| p.items).unwrap_or_default()))
+                        .map(|(_, id)| {
+                            s.spawn(move || {
+                                innertube::explore(id).map(|p| p.items).unwrap_or_default()
+                            })
+                        })
                         .collect();
-                    hs.into_iter().map(|h| h.join().unwrap_or_default()).collect()
+                    hs.into_iter()
+                        .map(|h| h.join().unwrap_or_default())
+                        .collect()
                 });
                 let mut iters: Vec<_> = lists.into_iter().map(|l| l.into_iter()).collect();
                 let mut out: Vec<Item> = Vec::new();
@@ -253,9 +286,9 @@ impl Shell {
                     return;
                 }
                 this.items = match res {
-                    Ok(items) if items.is_empty() => {
-                        Load::Error("The home feed came back empty. Check the network and retry.".into())
-                    }
+                    Ok(items) if items.is_empty() => Load::Error(
+                        "The home feed came back empty. Check the network and retry.".into(),
+                    ),
                     Ok(items) => Load::Ready(Arc::new(items)),
                     Err(e) => Load::Error(e.to_string()),
                 };
@@ -280,7 +313,9 @@ impl Shell {
         let (q, f) = (q.to_string(), SearchFilter::default());
         let q_err = q.clone();
         cx.spawn(async move |this, cx| {
-            let res = blocking(move || innertube::search(&q, &f).map(|p| (p.items, p.continuation))).await;
+            let res =
+                blocking(move || innertube::search(&q, &f).map(|p| (p.items, p.continuation)))
+                    .await;
             let _ = this.update(cx, |this, cx| {
                 if this.serial != serial {
                     return;
@@ -310,10 +345,37 @@ impl Shell {
             Mode::Search(q) => self.search_for(&q, cx),
         }
     }
+
+    /// Opens the Track C3 player for a video tapped in Home/search.
+    fn open_video(&mut self, v: VideoItem, window: &mut Window, cx: &mut Context<Self>) {
+        if self.player.is_some() {
+            return;
+        }
+        log::info!("open_video: {} ({})", v.title, v.id);
+        let player = cx.new(|cx| player::Player::new(v, cx));
+        cx.subscribe_in(
+            &player,
+            window,
+            |this, _p, ev: &player::PlayerEvent, _w, cx| {
+                if matches!(ev, player::PlayerEvent::Back) {
+                    this.player = None; // Player::drop tears mpv and the surface view down
+                    cx.notify();
+                }
+            },
+        )
+        .detach();
+        self.player = Some(player);
+        cx.notify();
+    }
 }
 
 impl Render for Shell {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Track C3: an open player takes over the window; the feed stays
+        // cached underneath, so Back is instant.
+        if let Some(player) = self.player.clone() {
+            return div().size_full().child(player);
+        }
         let title = match &self.mode {
             Mode::Home => "Home".to_string(),
             Mode::Search(q) => format!("Search: {q}"),
@@ -333,7 +395,12 @@ impl Render for Shell {
                 .items_center()
                 .gap_3()
                 .py_8()
-                .child(div().text_color(rgb(TEXT2)).text_size(px(13.)).child(e.clone()))
+                .child(
+                    div()
+                        .text_color(rgb(TEXT2))
+                        .text_size(px(13.))
+                        .child(e.clone()),
+                )
                 .child(
                     div()
                         .id("retry")
@@ -355,7 +422,12 @@ impl Render for Shell {
             Load::Ready(items) => div()
                 .flex_1()
                 .overflow_y_scrollbar()
-                .child(div().flex().flex_col().children(items.iter().map(item_row)))
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .children(items.iter().map(|item| item_row(item, cx))),
+                )
                 .into_any_element(),
         };
         div()
@@ -374,7 +446,11 @@ impl Render for Shell {
                     .py_2()
                     .border_b_1()
                     .border_color(rgb(BORDER))
-                    .child(div().flex_1().child(Input::new(&self.search).cleanable(true)))
+                    .child(
+                        div()
+                            .flex_1()
+                            .child(Input::new(&self.search).cleanable(true)),
+                    )
                     .child(
                         div()
                             .id("search-btn")
@@ -425,20 +501,27 @@ impl Render for Shell {
 
 // ───────────────────────────── list rows ─────────────────────────────
 
-fn item_row(item: &Item) -> Div {
+fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
     match item {
-        Item::Video(v) => video_row(v),
+        Item::Video(v) => video_row(v, cx).into_any_element(),
         Item::Channel(c) => div()
             .flex()
             .items_center()
             .gap_3()
             .p_2()
-            .child(
-                match &c.avatar {
-                    Some(u) => img(u.clone()).size_10().flex_none().rounded_full().into_any_element(),
-                    None => div().size_10().flex_none().rounded_full().bg(rgb(SURFACE)).into_any_element(),
-                },
-            )
+            .child(match &c.avatar {
+                Some(u) => img(u.clone())
+                    .size_10()
+                    .flex_none()
+                    .rounded_full()
+                    .into_any_element(),
+                None => div()
+                    .size_10()
+                    .flex_none()
+                    .rounded_full()
+                    .bg(rgb(SURFACE))
+                    .into_any_element(),
+            })
             .child(
                 div()
                     .flex()
@@ -456,36 +539,50 @@ fn item_row(item: &Item) -> Div {
                             )
                         },
                     ),
-            ),
+            )
+            .into_any_element(),
         Item::Playlist(p) => div()
             .flex()
             .gap_3()
             .p_2()
-            .child(
-                match &p.thumbnail {
-                    Some(u) => img(u.clone()).w(px(120.)).h(px(68.)).flex_none().rounded_md().into_any_element(),
-                    None => div().w(px(120.)).h(px(68.)).flex_none().rounded_md().bg(rgb(SURFACE)).into_any_element(),
-                },
-            )
+            .child(match &p.thumbnail {
+                Some(u) => img(u.clone())
+                    .w(px(120.))
+                    .h(px(68.))
+                    .flex_none()
+                    .rounded_md()
+                    .into_any_element(),
+                None => div()
+                    .w(px(120.))
+                    .h(px(68.))
+                    .flex_none()
+                    .rounded_md()
+                    .bg(rgb(SURFACE))
+                    .into_any_element(),
+            })
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .gap_1()
                     .child(div().text_size(px(14.)).child(p.title.clone()))
-                    .when(!p.video_count_text.as_deref().unwrap_or("").is_empty(), |d| {
-                        d.child(
-                            div()
-                                .text_size(px(12.))
-                                .text_color(rgb(TEXT2))
-                                .child(p.video_count_text.clone().unwrap_or_default()),
-                        )
-                    }),
-            ),
+                    .when(
+                        !p.video_count_text.as_deref().unwrap_or("").is_empty(),
+                        |d| {
+                            d.child(
+                                div()
+                                    .text_size(px(12.))
+                                    .text_color(rgb(TEXT2))
+                                    .child(p.video_count_text.clone().unwrap_or_default()),
+                            )
+                        },
+                    ),
+            )
+            .into_any_element(),
     }
 }
 
-fn video_row(v: &VideoItem) -> Div {
+fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
     let meta = [
         v.views_text.as_deref().unwrap_or(""),
         v.published_text.as_deref().unwrap_or(""),
@@ -496,10 +593,18 @@ fn video_row(v: &VideoItem) -> Div {
     .cloned()
     .collect::<Vec<_>>()
     .join("  ·  ");
+    let video = v.clone();
     div()
         .flex()
         .gap_3()
         .p_2()
+        // gpui-pre synthesizes ClickEvent::Touch from taps, so on_click works
+        // where on_mouse_down does not (see the Retry button above).
+        .id(v.id.clone())
+        .cursor_pointer()
+        .on_click(
+            cx.listener(move |this, _, window, cx| this.open_video(video.clone(), window, cx)),
+        )
         .child(
             img(v.thumbnail.clone())
                 .w(px(140.))
@@ -515,7 +620,12 @@ fn video_row(v: &VideoItem) -> Div {
                 .gap_1()
                 .min_w_0()
                 .child(div().text_size(px(14.)).child(v.title.clone()))
-                .child(div().text_size(px(12.)).text_color(rgb(TEXT2)).child(v.channel_name.clone()))
+                .child(
+                    div()
+                        .text_size(px(12.))
+                        .text_color(rgb(TEXT2))
+                        .child(v.channel_name.clone()),
+                )
                 .when(!meta.is_empty(), |d| {
                     d.child(div().text_size(px(12.)).text_color(rgb(TEXT2)).child(meta))
                 }),

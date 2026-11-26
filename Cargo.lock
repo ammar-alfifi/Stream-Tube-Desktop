@@ -6525,6 +6525,7 @@ dependencies = [
  "futures",
  "gpui-kit",
  "gpui-mobile",
+ "jni",
  "log",
  "streamtube-core",
 ]
