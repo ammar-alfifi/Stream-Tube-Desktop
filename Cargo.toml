@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/streamtube-core", "."]
+members = ["crates/streamtube-core", "crates/streamtube-android", "."]
 resolver = "3"
 
 [package]

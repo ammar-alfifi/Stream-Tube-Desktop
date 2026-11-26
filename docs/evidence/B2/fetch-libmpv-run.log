@@ -1,0 +1,9 @@
+$ ST_APK_DIR=/home/ammar/.hermes/cache/scratch/streamtube-native ./scripts/fetch-libmpv.sh
+>> [arm64-v8a] downloading app-default-arm64-v8a-release.apk ...
+100 32.70M  32.70M  13.29M      0     0      0  00:00:02  12.00M   # one TLS retry, then OK
+android/app/src/main/jniLibs/mpv-android-arm64-v8a.apk: OK            # sha256sum -c
+>> [arm64-v8a] staged 9 libs into android/app/src/main/jniLibs/arm64-v8a
+>> [x86_64] using /home/ammar/.hermes/cache/scratch/streamtube-native/mpv-android-x86_64.apk
+android/app/src/main/jniLibs/mpv-android-x86_64.apk: OK              # sha256sum -c
+>> [x86_64] staged 9 libs into android/app/src/main/jniLibs/x86_64
+>> DONE: 9 libs per ABI (libplayer.so dropped), 67 MB total
