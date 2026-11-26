@@ -1,0 +1,14 @@
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rquickjs-sys v0.14.0
+   Compiling libsqlite3-sys v0.40.0
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.17
+   Compiling ureq v3.5.2
+   Compiling rquickjs-core v0.14.0
+   Compiling rquickjs v0.14.0
+   Compiling rusqlite v0.43.0
+   Compiling streamtube-core v0.7.5-alpha (/home/ammar/projects/Stream-Tube-Desktop/crates/streamtube-core)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2m 14s
+     Running `target/debug/examples/nsig_probe /home/ammar/.hermes/cache/scratch/youtube-player.js /home/ammar/.hermes/cache/scratch/ejs-challenge.json`
+{"responses":[{"data":{"bAE0s2JYwAgIhAJzS4UbnRWBa7HJ_RQ54WK8Mzx0inNweBAq6J_uRsk-yATEA0K7HErIdGILkVd23Qlfo3GcpyTlsKp6bCtshDS53JTU=":"AE0s2JYwRgIhAJzS4UbnRWBa7HJ_TQ54WK8Mzx0bnNweBAq6J_uRsk-yAiEA0K7HErIdGILkVd23Qlfo3GcpyTlsKp6bCtshDS53JTU="},"type":"result"},{"data":{"8vVTrstqZjE13N0lu":"2BoXwtaFEstEDA"},"type":"result"}],"type":"result"}
