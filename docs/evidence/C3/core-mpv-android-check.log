@@ -1,0 +1,28 @@
+    Building arm64-v8a (aarch64-linux-android)
+warning: field `wakeup` is never read
+   --> crates/streamtube-core/src/player/mpv.rs:157:5
+    |
+143 | struct Fns {
+    |        --- field in this struct
+...
+157 |     wakeup: unsafe extern "C" fn(*mut mpv_handle),
+    |     ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `streamtube-core` (lib) generated 1 warning
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.36s
+    Building x86_64 (x86_64-linux-android)
+warning: field `wakeup` is never read
+   --> crates/streamtube-core/src/player/mpv.rs:157:5
+    |
+143 | struct Fns {
+    |        --- field in this struct
+...
+157 |     wakeup: unsafe extern "C" fn(*mut mpv_handle),
+    |     ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `streamtube-core` (lib) generated 1 warning
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.36s
