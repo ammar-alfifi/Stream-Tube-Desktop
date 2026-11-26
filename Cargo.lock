@@ -6491,7 +6491,7 @@ checksum = "d08889ec5408683408db66ad89e0e1f93dff55c73a4ccc71c427d5b277ee47e6"
 
 [[package]]
 name = "streamtube"
-version = "0.7.5-alpha"
+version = "0.7.5-alpha.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6517,7 +6517,7 @@ dependencies = [
 
 [[package]]
 name = "streamtube-android"
-version = "0.7.5-alpha"
+version = "0.7.5-alpha.2"
 dependencies = [
  "android-activity",
  "android_logger",
@@ -6532,7 +6532,7 @@ dependencies = [
 
 [[package]]
 name = "streamtube-core"
-version = "0.7.5-alpha"
+version = "0.7.5-alpha.2"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

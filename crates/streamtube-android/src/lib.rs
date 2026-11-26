@@ -26,7 +26,17 @@ mod player;
 
 gpui_kit::assets::icon_assets!(
     pub AndroidIcons,
-    [House, Search, ArrowRight, ArrowLeft, Play, Pause, Close]
+    [
+        House,
+        Search,
+        ArrowRight,
+        ArrowLeft,
+        Play,
+        Pause,
+        Close,
+        ThumbsUp,
+        Check
+    ]
 );
 
 use std::mem;
@@ -210,6 +220,8 @@ struct Shell {
     items: Load<Arc<Vec<Item>>>,
     continuation: Option<String>,
     serial: u64,
+    /// YouTube search filter kind: 0 all, 1 videos, 2 channels, 3 playlists, 4 movies.
+    search_kind: u8,
     image_urls: Vec<String>,
     /// Open player (Track C3); the feed stays cached underneath for instant back.
     player: Option<Entity<player::Player>>,
@@ -237,6 +249,7 @@ impl Shell {
             items: Load::Loading,
             continuation: None,
             serial: 0,
+            search_kind: 0,
             image_urls: Vec::new(),
             player: None,
         };
@@ -398,18 +411,44 @@ impl Shell {
     }
 
     fn search_for(&mut self, q: &str, window: &mut Window, cx: &mut Context<Self>) {
-        log::info!("search_for: {q:?}");
+        self.run_search(q, 0, window, cx);
+    }
+
+    /// Applies one of the YouTube result-type chips to the current query.
+    fn set_search_kind(&mut self, kind: u8, window: &mut Window, cx: &mut Context<Self>) {
+        if self.search_kind == kind {
+            return;
+        }
+        let Mode::Search(q) = &self.mode else {
+            return;
+        };
+        let q = q.clone();
+        self.run_search(&q, kind, window, cx);
+    }
+
+    fn run_search(&mut self, q: &str, kind: u8, window: &mut Window, cx: &mut Context<Self>) {
+        log::info!("search_for: {q:?} kind={kind}");
         if q.is_empty() {
             self.load_home(window, cx);
             return;
         }
+        self.search.update(cx, |state, cx| {
+            state.set_value(q.to_string(), window, cx);
+        });
         self.clear_images(cx, Some(window));
         self.mode = Mode::Search(q.to_string());
+        self.search_kind = kind;
         self.items = Load::Loading;
         self.continuation = None;
         self.serial += 1;
         let serial = self.serial;
-        let (q, f) = (q.to_string(), SearchFilter::default());
+        let (q, f) = (
+            q.to_string(),
+            SearchFilter {
+                kind,
+                ..SearchFilter::default()
+            },
+        );
         let q_err = q.clone();
         cx.spawn(async move |this, cx| {
             let res =
@@ -508,7 +547,7 @@ impl Render for Shell {
                         .gap_4()
                         .px_2()
                         .pb_4()
-                        .children(items.iter().map(|item| item_row(item, cx))),
+                        .children(items.iter().map(|item| item_row(item, searching, cx))),
                 )
                 .into_any_element(),
         };
@@ -552,20 +591,12 @@ impl Render for Shell {
                             .child(
                                 div()
                                     .flex_1()
+                                    .flex()
+                                    .items_center()
                                     .text_size(px(20.))
                                     .font_weight(FontWeight::BOLD)
-                                    .child("Stream Tube"),
-                            )
-                            .child(
-                                div()
-                                    .px_2()
-                                    .py_1()
-                                    .rounded_full()
-                                    .bg(rgb(PRIMARY_CONTAINER))
-                                    .text_size(px(10.))
-                                    .font_weight(FontWeight::BOLD)
-                                    .text_color(rgb(ON_PRIMARY_CONTAINER))
-                                    .child("BETA"),
+                                    .child("Stream")
+                                    .child(div().text_color(rgb(ACCENT)).child("Tube")),
                             ),
                     )
                     .child(
@@ -632,28 +663,10 @@ impl Render for Shell {
                             ),
                     ),
             )
-            .when(searching, |d| {
-                d.child(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .flex_none()
-                        .gap_1()
-                        .px_4()
-                        .pb_2()
-                        .child(
-                            div()
-                                .text_size(px(18.))
-                                .font_weight(FontWeight::BOLD)
-                                .child("Search results"),
-                        )
-                        .child(div().text_size(px(12.)).text_color(rgb(TEXT2)).child(
-                            match &self.mode {
-                                Mode::Search(q) => q.clone(),
-                                Mode::Home => String::new(),
-                            },
-                        )),
-                )
+            .child(if searching {
+                search_filter_bar(self.search_kind, cx).into_any_element()
+            } else {
+                category_bar(cx).into_any_element()
             })
             .child(body)
             .child(bottom_nav(searching, cx))
@@ -661,6 +674,77 @@ impl Render for Shell {
 }
 
 // ───────────────────────────── Material 3 states ─────────────────────────────
+
+fn category_chip(label: &'static str, active: bool) -> Stateful<Div> {
+    div()
+        .id(label)
+        .role(gpui_kit::Role::Button)
+        .aria_label(label)
+        .tab_index(0)
+        .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
+        .flex_none()
+        .h(px(48.))
+        .px_4()
+        .flex()
+        .items_center()
+        .rounded_full()
+        .bg(if active { rgb(TEXT) } else { rgb(SURFACE_HIGH) })
+        .text_color(if active { rgb(BG) } else { rgb(TEXT) })
+        .text_size(px(13.))
+        .font_weight(FontWeight::MEDIUM)
+        .cursor_pointer()
+        .child(label)
+}
+
+/// The desktop Home's Popular/Music/Gaming/... rail, scrollable on a phone.
+fn category_bar(cx: &mut Context<Shell>) -> impl IntoElement {
+    div()
+        .flex_none()
+        .h(px(64.))
+        .px_4()
+        .pb_2()
+        .overflow_x_scrollbar()
+        .child(
+            div()
+                .flex()
+                .gap_2()
+                .child(category_chip("Popular", true))
+                .children(
+                    ["Music", "Gaming", "News", "Sports", "Live", "Learning"].map(|label| {
+                        category_chip(label, false).on_click(cx.listener(
+                            move |this, _, window, cx| this.search_for(label, window, cx),
+                        ))
+                    }),
+                ),
+        )
+}
+
+/// Result-type chips from the desktop search screen. Each one re-runs the
+/// same query with YouTube's own `kind` search filter.
+fn search_filter_bar(kind: u8, cx: &mut Context<Shell>) -> impl IntoElement {
+    div()
+        .flex_none()
+        .h(px(64.))
+        .px_4()
+        .pb_2()
+        .overflow_x_scrollbar()
+        .child(
+            div().flex().gap_2().children(
+                [
+                    ("All", 0_u8),
+                    ("Videos", 1),
+                    ("Channels", 2),
+                    ("Playlists", 3),
+                    ("Movies", 4),
+                ]
+                .map(|(label, value)| {
+                    category_chip(label, kind == value).on_click(cx.listener(
+                        move |this, _, window, cx| this.set_search_kind(value, window, cx),
+                    ))
+                }),
+            ),
+        )
+}
 
 fn loading_state() -> impl IntoElement {
     div().flex_1().min_h_0().overflow_y_scrollbar().child(
@@ -915,8 +999,9 @@ fn bottom_nav(searching: bool, cx: &mut Context<Shell>) -> Div {
 
 // ───────────────────────────── list rows ─────────────────────────────
 
-fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
+fn item_row(item: &Item, searching: bool, cx: &mut Context<Shell>) -> AnyElement {
     match item {
+        Item::Video(v) if searching => search_video_row(v, cx).into_any_element(),
         Item::Video(v) => video_row(v, cx).into_any_element(),
         Item::Channel(c) => div()
             .w_full()
@@ -994,7 +1079,7 @@ fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
     }
 }
 
-fn avatar_element(url: Option<&str>, name: &str, size: Pixels) -> AnyElement {
+pub(crate) fn avatar_element(url: Option<&str>, name: &str, size: Pixels) -> AnyElement {
     if store::settings_snapshot().hide_channel_avatars {
         return div().size(size).flex_none().into_any_element();
     }
@@ -1044,16 +1129,70 @@ fn video_avatar(v: &VideoItem) -> AnyElement {
     avatar_element(v.channel_avatar.as_deref(), &v.channel_name, px(36.))
 }
 
+fn video_meta(v: &VideoItem) -> String {
+    [v.views_text.as_deref(), v.published_text.as_deref()]
+        .into_iter()
+        .flatten()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join("  ·  ")
+}
+
+/// Shared 16:9 artwork with the duration/LIVE badge used by both the Home
+/// cards and the denser search-result rows.
+fn video_thumb(v: &VideoItem) -> Div {
+    div()
+        .relative()
+        .w_full()
+        .aspect_ratio(16. / 9.)
+        .rounded(px(12.))
+        .overflow_hidden()
+        .bg(rgb(SURFACE_HIGH))
+        .child(
+            img(v.thumbnail.clone())
+                .w_full()
+                .h_full()
+                .object_fit(ObjectFit::Cover)
+                .into_any_element(),
+        )
+        .children(if v.is_live {
+            Some(
+                div()
+                    .absolute()
+                    .right_2()
+                    .bottom_2()
+                    .px_2()
+                    .py_1()
+                    .rounded(px(4.))
+                    .bg(rgb(ACCENT))
+                    .text_color(rgb(ON_ACCENT))
+                    .text_size(px(11.))
+                    .font_weight(FontWeight::BOLD)
+                    .child("LIVE"),
+            )
+        } else {
+            v.duration_text
+                .as_deref()
+                .filter(|s| !s.is_empty())
+                .map(|d| {
+                    div()
+                        .absolute()
+                        .right_2()
+                        .bottom_2()
+                        .px_2()
+                        .py_1()
+                        .rounded(px(4.))
+                        .bg(rgb(0xe0000000))
+                        .text_color(rgb(0xffffff))
+                        .text_size(px(11.))
+                        .font_weight(FontWeight::MEDIUM)
+                        .child(d.to_string())
+                })
+        })
+}
+
 fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
-    let meta = [
-        v.views_text.as_deref().unwrap_or(""),
-        v.published_text.as_deref().unwrap_or(""),
-    ]
-    .iter()
-    .filter(|s| !s.is_empty())
-    .cloned()
-    .collect::<Vec<_>>()
-    .join("  ·  ");
+    let meta = video_meta(v);
     let video = v.clone();
     div()
         .w_full()
@@ -1073,41 +1212,7 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
             let video = video.clone();
             move |this, _, window, cx| this.open_video(video.clone(), window, cx)
         }))
-        .child(
-            div()
-                .relative()
-                .w_full()
-                .aspect_ratio(16. / 9.)
-                .rounded(px(12.))
-                .overflow_hidden()
-                .bg(rgb(SURFACE_HIGH))
-                .child(
-                    img(v.thumbnail.clone())
-                        .w_full()
-                        .h_full()
-                        .object_fit(ObjectFit::Cover)
-                        .into_any_element(),
-                )
-                .children(
-                    v.duration_text
-                        .as_deref()
-                        .filter(|s| !s.is_empty())
-                        .map(|d| {
-                            div()
-                                .absolute()
-                                .right_2()
-                                .bottom_2()
-                                .px_2()
-                                .py_1()
-                                .rounded(px(4.))
-                                .bg(rgb(0xe0000000))
-                                .text_color(rgb(0xffffff))
-                                .text_size(px(11.))
-                                .font_weight(FontWeight::MEDIUM)
-                                .child(d.to_string())
-                        }),
-                ),
-        )
+        .child(video_thumb(v))
         .child(
             div()
                 .flex()
@@ -1126,6 +1231,7 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
                             div()
                                 .h(px(44.))
                                 .overflow_hidden()
+                                .line_clamp(2)
                                 .text_size(px(16.))
                                 .font_weight(FontWeight::MEDIUM)
                                 .child(v.title.clone()),
@@ -1138,6 +1244,69 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
                         )
                         .when(!meta.is_empty(), |d| {
                             d.child(div().text_size(px(11.)).text_color(rgb(TEXT2)).child(meta))
+                        }),
+                ),
+        )
+}
+
+/// The desktop search screen is a list, not the Home grid: a wide 16:9
+/// thumbnail on the leading edge and title/metadata/description beside it.
+fn search_video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
+    let meta = video_meta(v);
+    let video = v.clone();
+    div()
+        .w_full()
+        .flex()
+        .gap_3()
+        .py_2()
+        .id(format!("search-{}", v.id))
+        .role(gpui_kit::Role::Button)
+        .aria_label(v.title.clone())
+        .tab_index(0)
+        .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
+        .cursor_pointer()
+        .on_click(cx.listener({
+            let video = video.clone();
+            move |this, _, window, cx| this.open_video(video.clone(), window, cx)
+        }))
+        .child(div().w(px(240.)).flex_none().child(video_thumb(v)))
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .flex()
+                .flex_col()
+                .gap_1()
+                .child(
+                    div()
+                        .h(px(44.))
+                        .overflow_hidden()
+                        .line_clamp(2)
+                        .text_size(px(16.))
+                        .font_weight(FontWeight::MEDIUM)
+                        .child(v.title.clone()),
+                )
+                .when(!meta.is_empty(), |d| {
+                    d.child(div().text_size(px(11.)).text_color(rgb(TEXT2)).child(meta))
+                })
+                .child(
+                    div()
+                        .text_size(px(12.))
+                        .text_color(rgb(TEXT2))
+                        .child(v.channel_name.clone()),
+                )
+                .children(
+                    v.description_snippet
+                        .as_deref()
+                        .filter(|s| !s.is_empty())
+                        .map(|s| {
+                            div()
+                                .h(px(36.))
+                                .overflow_hidden()
+                                .line_clamp(2)
+                                .text_size(px(12.))
+                                .text_color(rgb(TEXT2))
+                                .child(s.to_string())
                         }),
                 ),
         )

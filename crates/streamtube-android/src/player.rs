@@ -44,7 +44,7 @@ use streamtube_core::store;
 
 use crate::{
     ACCENT, BG, ERROR, ON_ACCENT, ON_PRIMARY_CONTAINER, PRIMARY_CONTAINER, SURFACE, SURFACE_HIGH,
-    SURFACE_VARIANT, TEXT, TEXT2, blocking,
+    SURFACE_VARIANT, TEXT, TEXT2, avatar_element, blocking,
 };
 
 // ───────────────────── Java → Rust surface events ─────────────────────
@@ -286,6 +286,9 @@ pub struct Player {
     started: std::time::Instant,
     /// Last `time-pos` value written to the log (throttled to ~5 s).
     logged_at: f64,
+    /// Local account-independent like/subscribe state used by the action pills.
+    liked: bool,
+    subscribed: bool,
 }
 
 impl Player {
@@ -364,6 +367,11 @@ impl Player {
         .detach();
 
         let duration = video.duration_secs.unwrap_or(0) as f64;
+        let liked = store::rating(&video.id) == 1;
+        let subscribed = video
+            .channel_id
+            .as_deref()
+            .is_some_and(store::is_subscribed);
         Self {
             video,
             view_id,
@@ -386,6 +394,8 @@ impl Player {
             resolving: false,
             started: std::time::Instant::now(),
             logged_at: -10.0,
+            liked,
+            subscribed,
         }
     }
 
@@ -690,6 +700,31 @@ impl Player {
         }
         cx.notify();
     }
+
+    fn toggle_like(&mut self, cx: &mut Context<Self>) {
+        self.liked = !self.liked;
+        store::set_rating(&self.video.id, if self.liked { 1 } else { 0 });
+        log::info!("player: like toggled -> {}", self.liked);
+        cx.notify();
+    }
+
+    fn toggle_subscribe(&mut self, cx: &mut Context<Self>) {
+        let Some(channel_id) = self.video.channel_id.clone() else {
+            return;
+        };
+        self.subscribed = !self.subscribed;
+        if self.subscribed {
+            store::subscribe(
+                &channel_id,
+                &self.video.channel_name,
+                self.video.channel_avatar.as_deref(),
+            );
+        } else {
+            store::unsubscribe(&channel_id);
+        }
+        log::info!("player: subscribe toggled -> {}", self.subscribed);
+        cx.notify();
+    }
 }
 
 impl EventEmitter<PlayerEvent> for Player {}
@@ -775,13 +810,124 @@ impl Render for Player {
                                                 .text_size(px(18.))
                                                 .font_weight(FontWeight::BOLD)
                                                 .child(self.video.title.clone()),
-                                        )
-                                        .child(
-                                            div()
-                                                .text_size(px(13.))
-                                                .text_color(rgb(TEXT2))
-                                                .child(self.video.channel_name.clone()),
                                         ),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .flex()
+                                .items_center()
+                                .gap_3()
+                                .child(avatar_element(
+                                    self.video.channel_avatar.as_deref(),
+                                    &self.video.channel_name,
+                                    px(40.),
+                                ))
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w_0()
+                                        .text_size(px(14.))
+                                        .font_weight(FontWeight::MEDIUM)
+                                        .child(self.video.channel_name.clone()),
+                                )
+                                .when(self.video.channel_id.is_some(), |d| {
+                                    d.child(
+                                        div()
+                                            .id("subscribe")
+                                            .role(gpui_kit::Role::Button)
+                                            .aria_label(if self.subscribed {
+                                                "Unsubscribe"
+                                            } else {
+                                                "Subscribe"
+                                            })
+                                            .tab_index(0)
+                                            .focus_visible(|style| {
+                                                style.border_2().border_color(rgb(TEXT))
+                                            })
+                                            .flex_none()
+                                            .h(px(48.))
+                                            .px_4()
+                                            .flex()
+                                            .items_center()
+                                            .justify_center()
+                                            .gap_2()
+                                            .rounded_full()
+                                            .bg(if self.subscribed {
+                                                rgb(SURFACE_HIGH)
+                                            } else {
+                                                rgb(TEXT)
+                                            })
+                                            .text_color(if self.subscribed {
+                                                rgb(TEXT)
+                                            } else {
+                                                rgb(BG)
+                                            })
+                                            .text_size(px(13.))
+                                            .font_weight(FontWeight::MEDIUM)
+                                            .cursor_pointer()
+                                            .on_click(cx.listener(|this, _, _, cx| {
+                                                this.toggle_subscribe(cx)
+                                            }))
+                                            .when(self.subscribed, |d| {
+                                                d.child(
+                                                    Icon::new(
+                                                        gpui_kit::assets::IconName::Check,
+                                                    )
+                                                    .size(px(18.))
+                                                    .text_color(rgb(TEXT)),
+                                                )
+                                            })
+                                            .child(if self.subscribed {
+                                                "Subscribed"
+                                            } else {
+                                                "Subscribe"
+                                            }),
+                                    )
+                                })
+                                .child(
+                                    div()
+                                        .id("like")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label(if self.liked { "Unlike" } else { "Like" })
+                                        .tab_index(0)
+                                        .focus_visible(|style| {
+                                            style.border_2().border_color(rgb(TEXT))
+                                        })
+                                        .flex_none()
+                                        .h(px(48.))
+                                        .px_4()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .gap_2()
+                                        .rounded_full()
+                                        .bg(if self.liked {
+                                            rgb(PRIMARY_CONTAINER)
+                                        } else {
+                                            rgb(SURFACE_HIGH)
+                                        })
+                                        .text_color(if self.liked {
+                                            rgb(ON_PRIMARY_CONTAINER)
+                                        } else {
+                                            rgb(TEXT)
+                                        })
+                                        .text_size(px(13.))
+                                        .font_weight(FontWeight::MEDIUM)
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|this, _, _, cx| {
+                                            this.toggle_like(cx)
+                                        }))
+                                        .child(
+                                            Icon::new(gpui_kit::assets::IconName::ThumbsUp)
+                                                .size(px(18.))
+                                                .text_color(if self.liked {
+                                                    rgb(ON_PRIMARY_CONTAINER)
+                                                } else {
+                                                    rgb(TEXT)
+                                                }),
+                                        )
+                                        .child(if self.liked { "Liked" } else { "Like" }),
                                 ),
                         )
                         .child(
