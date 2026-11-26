@@ -4,7 +4,7 @@ resolver = "3"
 
 [package]
 name = "streamtube"
-version = "0.7.5-alpha"
+version = "0.7.5-alpha.2"
 edition = "2024"
 description = "A YouTube desktop client in Rust + GPUI with SponsorBlock, DeArrow, RYD, local subscriptions & more"
 license = "MIT"

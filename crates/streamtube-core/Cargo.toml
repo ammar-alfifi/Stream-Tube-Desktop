@@ -1,6 +1,6 @@
 [package]
 name = "streamtube-core"
-version = "0.7.5-alpha"
+version = "0.7.5-alpha.2"
 edition = "2024"
 description = "Platform-independent Stream Tube networking, storage and playback preparation"
 license = "MIT"

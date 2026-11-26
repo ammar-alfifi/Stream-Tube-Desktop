@@ -1,6 +1,6 @@
 [package]
 name = "streamtube-android"
-version = "0.7.5-alpha"
+version = "0.7.5-alpha.2"
 edition = "2024"
 description = "Android shell for Stream Tube: gpui-mobile bootstrap with a real Home feed and search"
 license = "MIT"
