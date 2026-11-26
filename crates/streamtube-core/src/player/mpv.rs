@@ -511,6 +511,7 @@ impl Mpv {
             }
             let rc = (f.initialize)(h);
             if rc < 0 {
+                (f.terminate_destroy)(h);
                 return Err(anyhow!("mpv_initialize failed: {}", err_str(rc)));
             }
             for (i, (name, fmt)) in OBSERVED.iter().enumerate() {

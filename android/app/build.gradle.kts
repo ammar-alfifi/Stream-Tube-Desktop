@@ -25,8 +25,8 @@ android {
         applicationId = "dev.streamtube.android"
         minSdk = 26          // Vulkan 1.0 is mandatory from API 26+
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.7.5-alpha"
+        versionCode = 2
+        versionName = "0.7.5-alpha.2"
 
         ndk {
             // armv7 is out of scope for v1 (plan2.md Track G)

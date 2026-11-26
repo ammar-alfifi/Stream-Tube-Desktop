@@ -22,13 +22,14 @@
 
 use std::collections::HashSet;
 use std::sync::{
-    Arc, Mutex, Weak,
+    Arc, Mutex, Once, Weak,
     atomic::{AtomicI64, AtomicU64, Ordering},
 };
 
 use futures::StreamExt;
 use futures::channel::mpsc::UnboundedSender;
 use gpui::{EventEmitter, px, rgb};
+use gpui_kit::component::scroll::ScrollableElement;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
 use gpui_mobile::components::platform_view_element::ManagedPlatformView;
@@ -40,7 +41,10 @@ use streamtube_core::player::mpv::{Mpv, MpvEvent, PropValue, set_java_vm};
 use streamtube_core::player::proxy;
 use streamtube_core::store;
 
-use crate::{ACCENT, BG, BORDER, TEXT, TEXT2, blocking};
+use crate::{
+    ACCENT, BG, ERROR, ON_ACCENT, ON_PRIMARY_CONTAINER, PRIMARY_CONTAINER, SURFACE, SURFACE_HIGH,
+    SURFACE_VARIANT, TEXT, TEXT2, blocking,
+};
 
 // ───────────────────── Java → Rust surface events ─────────────────────
 
@@ -194,25 +198,30 @@ pub extern "system" fn Java_dev_gpui_mobile_StreamTubeSurfaceView_nativeSurfaceD
     }
 }
 
-// ───────────────────── one-time wiring at app start ─────────────────────
+// ───────────────────── one-time wiring before first playback ─────────────────────
+
+static PLAYER_INIT: Once = Once::new();
 
 /// Wires FFmpeg's Android JNI helpers (`av_jni_set_java_vm`, needed by
 /// MediaCodec decoders and mpv's android VO) and warms up the jni crate's
 /// JavaVM singleton so later global-ref deletes work from GPUI threads.
+/// This is deliberately lazy: opening Home must not load FFmpeg.
 pub fn init() {
-    let vm = gpui_mobile::android::jni::java_vm();
-    if vm.is_null() {
-        log::error!("player::init: JavaVM pointer unavailable");
-        return;
-    }
-    match set_java_vm(vm) {
-        Ok(()) => log::info!("player::init: av_jni_set_java_vm ok"),
-        Err(e) => log::error!("player::init: set_java_vm failed: {e:#}"),
-    }
-    // initializes the jni crate's JavaVM singleton (JavaVM::from_raw)
-    if let Err(e) = gpui_mobile::android::jni::with_env(|_| Ok::<(), String>(())) {
-        log::warn!("player::init: with_env warmup failed: {e}");
-    }
+    PLAYER_INIT.call_once(|| {
+        let vm = gpui_mobile::android::jni::java_vm();
+        if vm.is_null() {
+            log::error!("player::init: JavaVM pointer unavailable");
+            return;
+        }
+        match set_java_vm(vm) {
+            Ok(()) => log::info!("player::init: av_jni_set_java_vm ok"),
+            Err(e) => log::error!("player::init: set_java_vm failed: {e:#}"),
+        }
+        // initializes the jni crate's JavaVM singleton (JavaVM::from_raw)
+        if let Err(e) = gpui_mobile::android::jni::with_env(|_| Ok::<(), String>(())) {
+            log::warn!("player::init: with_env warmup failed: {e}");
+        }
+    });
 }
 
 /// Registers the `"mpv_surface"` platform-view factory with gpui-mobile's
@@ -414,6 +423,7 @@ impl Player {
         {
             return;
         }
+        init();
         let tx = self.tx.clone();
         match Mpv::new_external(&opts, move |ev| {
             let _ = tx.unbounded_send(Msg::Mpv(ev));
@@ -687,17 +697,16 @@ impl Render for Player {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let vw = f32::from(window.viewport_size().width);
         let vh = (vw * 9.0 / 16.0).max(180.).min(vw * 3.0 / 4.0);
+        let progress = if self.duration > 0.0 {
+            (self.time / self.duration).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let status = match &self.phase {
             Phase::Loading if self.streams.is_none() => "Resolving streams…".to_string(),
             Phase::Loading => "Opening stream…".to_string(),
-            Phase::Playing if self.buffering => {
-                format!(
-                    "Buffering… {} / {}",
-                    fmt_time(self.time),
-                    fmt_time(self.duration)
-                )
-            }
-            Phase::Playing => format!("{} / {}", fmt_time(self.time), fmt_time(self.duration)),
+            Phase::Playing if self.buffering => "Buffering…".to_string(),
+            Phase::Playing => "Now playing".to_string(),
             Phase::Ended => format!("Ended — {}", fmt_time(self.duration)),
             Phase::Error(e) => format!("Error: {e}"),
         };
@@ -709,169 +718,283 @@ impl Render for Player {
             .text_color(rgb(TEXT))
             // video surface (composited above this tree by Android)
             .child(self.view.render().w_full().h(px(vh)).flex_none())
-            // title row with back button
             .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap_2()
-                    .px_3()
-                    .py_2()
-                    .child(
-                        div()
-                            .id("back")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .font_weight(FontWeight::MEDIUM)
-                            .cursor_pointer()
-                            .bg(rgb(BORDER))
-                            .on_click(cx.listener(|_, _, _, cx| {
-                                log::info!("player: back requested");
-                                cx.emit(PlayerEvent::Back);
-                            }))
-                            .child("← Back"),
-                    )
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .text_sm()
-                            .font_weight(FontWeight::BOLD)
-                            .child(self.video.title.clone()),
-                    ),
-            )
-            // channel + status
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .px_3()
-                    .child(
-                        div()
-                            .text_size(px(13.))
-                            .text_color(rgb(TEXT2))
-                            .child(self.video.channel_name.clone()),
-                    )
-                    .child(
-                        div()
-                            .text_size(px(13.))
-                            .text_color(rgb(TEXT2))
-                            .child(status),
-                    )
-                    .when(self.segments.len() > 0, |d| {
-                        d.child(
+                div().flex_1().overflow_y_scrollbar().child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap_4()
+                        .p_4()
+                        .child(
                             div()
-                                .text_size(px(12.))
-                                .text_color(rgb(TEXT2))
-                                .child(format!("SponsorBlock: {} segments", self.segments.len())),
+                                .flex()
+                                .items_center()
+                                .gap_3()
+                                .child(
+                                    div()
+                                        .id("back")
+                                        .size(px(48.))
+                                        .flex_none()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded_full()
+                                        .bg(rgb(SURFACE_HIGH))
+                                        .text_size(px(20.))
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|_, _, _, cx| {
+                                            log::info!("player: back requested");
+                                            cx.emit(PlayerEvent::Back);
+                                        }))
+                                        .child("←"),
+                                )
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w_0()
+                                        .flex()
+                                        .flex_col()
+                                        .gap_1()
+                                        .child(
+                                            div()
+                                                .text_size(px(18.))
+                                                .font_weight(FontWeight::BOLD)
+                                                .child(self.video.title.clone()),
+                                        )
+                                        .child(
+                                            div()
+                                                .text_size(px(13.))
+                                                .text_color(rgb(TEXT2))
+                                                .child(self.video.channel_name.clone()),
+                                        ),
+                                ),
                         )
-                    })
-                    .children(
-                        self.fell_back.clone().map(|note| {
-                            div().text_size(px(12.)).text_color(rgb(ACCENT)).child(note)
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap_3()
+                                .p_4()
+                                .rounded_md()
+                                .bg(rgb(SURFACE))
+                                .border_1()
+                                .border_color(rgb(SURFACE_VARIANT))
+                                .child(
+                                    div()
+                                        .flex()
+                                        .justify_between()
+                                        .text_size(px(12.))
+                                        .text_color(rgb(TEXT2))
+                                        .child(fmt_time(self.time))
+                                        .child(fmt_time(self.duration)),
+                                )
+                                .child(progress_bar(progress))
+                                .child(
+                                    div()
+                                        .flex()
+                                        .items_center()
+                                        .gap_2()
+                                        .text_size(px(13.))
+                                        .text_color(if matches!(&self.phase, Phase::Error(_)) {
+                                            rgb(ERROR)
+                                        } else {
+                                            rgb(TEXT2)
+                                        })
+                                        .child(div().size(px(8.)).rounded_full().bg(
+                                            if matches!(&self.phase, Phase::Error(_)) {
+                                                rgb(ERROR)
+                                            } else {
+                                                rgb(ACCENT)
+                                            },
+                                        ))
+                                        .child(status),
+                                )
+                                .children(self.fell_back.clone().map(|_| {
+                                    div()
+                                        .p_3()
+                                        .rounded_md()
+                                        .bg(rgb(SURFACE_HIGH))
+                                        .text_size(px(12.))
+                                        .text_color(rgb(TEXT2))
+                                        .child("Playing at lower quality because the higher-quality stream could not be opened.")
+                                })),
+                        )
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap_4()
+                                .p_4()
+                                .rounded_md()
+                                .bg(rgb(SURFACE))
+                                .border_1()
+                                .border_color(rgb(SURFACE_VARIANT))
+                                .child(
+                                    div()
+                                        .flex()
+                                        .items_center()
+                                        .justify_between()
+                                        .child(
+                                            div()
+                                                .id("seek-back")
+                                                .size(px(56.))
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .rounded_full()
+                                                .bg(rgb(SURFACE_HIGH))
+                                                .text_sm()
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, _, cx| {
+                                                    this.seek_by(-10.0, cx)
+                                                }))
+                                                .child("−10s"),
+                                        )
+                                        .child(
+                                            div()
+                                                .id("play-pause")
+                                                .size(px(64.))
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .rounded_full()
+                                                .bg(rgb(ACCENT))
+                                                .text_color(rgb(ON_ACCENT))
+                                                .text_size(px(15.))
+                                                .font_weight(FontWeight::BOLD)
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, _, cx| {
+                                                    this.toggle_pause(cx)
+                                                }))
+                                                .child(if matches!(&self.phase, Phase::Loading) {
+                                                        "…"
+                                                    } else if self.paused {
+                                                        "Play"
+                                                    } else {
+                                                        "Pause"
+                                                    }),
+                                        )
+                                        .child(
+                                            div()
+                                                .id("seek-fwd")
+                                                .size(px(56.))
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .rounded_full()
+                                                .bg(rgb(SURFACE_HIGH))
+                                                .text_sm()
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, _, cx| {
+                                                    this.seek_by(10.0, cx)
+                                                }))
+                                                .child("+10s"),
+                                        ),
+                                )
+                                .child(
+                                    div()
+                                        .flex()
+                                        .gap_3()
+                                        .child(
+                                            div()
+                                                .id("restart")
+                                                .flex_1()
+                                                .h(px(44.))
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .rounded_full()
+                                                .bg(rgb(PRIMARY_CONTAINER))
+                                                .text_color(rgb(ON_PRIMARY_CONTAINER))
+                                                .text_sm()
+                                                .font_weight(FontWeight::MEDIUM)
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, _, cx| {
+                                                    let Some(m) = this.mpv.clone() else {
+                                                        return;
+                                                    };
+                                                    this.reset_playback();
+                                                    this.phase = Phase::Loading;
+                                                    if let Err(e) =
+                                                        m.command(&["seek", "0", "absolute"])
+                                                    {
+                                                        log::error!("restart seek failed: {e:#}");
+                                                        this.phase = Phase::Error(format!(
+                                                            "Restart failed: {e:#}"
+                                                        ));
+                                                        cx.notify();
+                                                        return;
+                                                    }
+                                                    if let Err(e) =
+                                                        m.command(&["set", "pause", "no"])
+                                                    {
+                                                        log::error!(
+                                                            "restart unpause failed: {e:#}"
+                                                        );
+                                                        this.phase = Phase::Error(format!(
+                                                            "Restart failed: {e:#}"
+                                                        ));
+                                                        cx.notify();
+                                                        return;
+                                                    }
+                                                    this.phase = Phase::Playing;
+                                                    cx.notify();
+                                                }))
+                                                .child("Restart"),
+                                        )
+                                        .child(
+                                            div()
+                                                .id("seek-fwd-60")
+                                                .flex_1()
+                                                .h(px(44.))
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .rounded_full()
+                                                .bg(rgb(SURFACE_HIGH))
+                                                .text_color(rgb(TEXT))
+                                                .text_sm()
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, _, cx| {
+                                                    this.seek_by(60.0, cx)
+                                                }))
+                                                .child("+60s"),
+                                        ),
+                                ),
+                        )
+                        .when(!self.segments.is_empty(), |d| {
+                            d.child(
+                                div()
+                                    .px_4()
+                                    .py_2()
+                                    .rounded_full()
+                                    .bg(rgb(SURFACE_HIGH))
+                                    .text_size(px(12.))
+                                    .text_color(rgb(TEXT2))
+                                    .child(format!(
+                                        "SponsorBlock: {} segments",
+                                        self.segments.len()
+                                    )),
+                            )
                         }),
-                    ),
-            )
-            // controls
-            .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap_2()
-                    .px_3()
-                    .py_2()
-                    .child(
-                        div()
-                            .id("play-pause")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .font_weight(FontWeight::MEDIUM)
-                            .cursor_pointer()
-                            .bg(rgb(ACCENT))
-                            .on_click(cx.listener(|this, _, _, cx| this.toggle_pause(cx)))
-                            .child(if self.paused { "Play" } else { "Pause" }),
-                    )
-                    .child(
-                        div()
-                            .id("restart")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .cursor_pointer()
-                            .bg(rgb(BORDER))
-                            .on_click(cx.listener(|this, _, _, cx| {
-                                let Some(m) = this.mpv.clone() else {
-                                    return;
-                                };
-                                this.reset_playback();
-                                this.phase = Phase::Loading;
-                                if let Err(e) = m.command(&["seek", "0", "absolute"]) {
-                                    log::error!("restart seek failed: {e:#}");
-                                    this.phase = Phase::Error(format!("Restart failed: {e:#}"));
-                                    cx.notify();
-                                    return;
-                                }
-                                if let Err(e) = m.command(&["set", "pause", "no"]) {
-                                    log::error!("restart unpause failed: {e:#}");
-                                    this.phase = Phase::Error(format!("Restart failed: {e:#}"));
-                                    cx.notify();
-                                    return;
-                                }
-                                this.phase = Phase::Playing;
-                                cx.notify();
-                            }))
-                            .child("Restart"),
-                    )
-                    .child(
-                        div()
-                            .id("seek-back")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .cursor_pointer()
-                            .bg(rgb(BORDER))
-                            .on_click(cx.listener(|this, _, _, cx| this.seek_by(-10.0, cx)))
-                            .child("−10s"),
-                    )
-                    .child(
-                        div()
-                            .id("seek-fwd")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .cursor_pointer()
-                            .bg(rgb(BORDER))
-                            .on_click(cx.listener(|this, _, _, cx| this.seek_by(10.0, cx)))
-                            .child("+10s"),
-                    )
-                    .child(
-                        div()
-                            .id("seek-fwd-60")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .cursor_pointer()
-                            .bg(rgb(BORDER))
-                            .on_click(cx.listener(|this, _, _, cx| this.seek_by(60.0, cx)))
-                            .child("+60s"),
-                    ),
+                ),
             )
     }
+}
+
+fn progress_bar(progress: f64) -> Div {
+    div()
+        .w_full()
+        .h(px(4.))
+        .rounded_full()
+        .bg(rgb(SURFACE_VARIANT))
+        .child(
+            div()
+                .h_full()
+                .w(relative(progress.clamp(0.01, 1.0) as f32))
+                .rounded_full()
+                .bg(rgb(ACCENT)),
+        )
 }
 
 impl Drop for Player {

@@ -24,6 +24,7 @@ extern crate gpui_mobile;
 
 mod player;
 
+use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -32,8 +33,10 @@ use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::scroll::ScrollableElement;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
+use gpui_kit::{ImgResourceLoader, Resource};
 use streamtube_core::api::innertube::{self, SearchFilter};
 use streamtube_core::api::types::{Item, VideoItem};
+use streamtube_core::i18n;
 use streamtube_core::store;
 
 // ───────────────────────── Android entry point ─────────────────────────
@@ -70,7 +73,7 @@ fn android_main(app: android_activity::AndroidApp) {
     log::info!("android_main: platform initialised");
     // Track C3: FFmpeg's MediaCodec helpers need the JavaVM, and the
     // "mpv_surface" platform view type must exist before a player opens.
-    player::init();
+    // FFmpeg itself is loaded lazily by player::try_start, not at app startup.
     player::register_platform_view();
     let shared = match gpui_mobile::android::jni::shared_platform() {
         Some(s) => s,
@@ -84,6 +87,11 @@ fn android_main(app: android_activity::AndroidApp) {
         .with_http_client(UreqHttp::new())
         .run(|cx: &mut App| {
             gpui_kit::init(cx);
+            if i18n::language().is_rtl() {
+                gpui_kit::base::LayoutDirection::Rtl.set_global(cx);
+            } else {
+                gpui_kit::base::LayoutDirection::Ltr.set_global(cx);
+            }
             gpui_kit::component::Theme::change(gpui_kit::component::ThemeMode::Dark, None, cx);
             match cx.open_window(
                 WindowOptions {
@@ -162,12 +170,19 @@ pub fn blocking<T: Send + 'static>(
 
 // ───────────────────────────── palette ─────────────────────────────
 
-pub(crate) const BG: u32 = 0x0f0f0f;
-pub(crate) const SURFACE: u32 = 0x212121;
-pub(crate) const BORDER: u32 = 0x303030;
-pub(crate) const TEXT: u32 = 0xf1f1f1;
-pub(crate) const TEXT2: u32 = 0xaaaaaa;
-pub(crate) const ACCENT: u32 = 0xff0033; // the store's default accent
+// Material 3 dark color roles (baseline purple scheme).
+pub(crate) const BG: u32 = 0x131318;
+pub(crate) const SURFACE: u32 = 0x1d1b20;
+pub(crate) const SURFACE_HIGH: u32 = 0x29272f;
+pub(crate) const SURFACE_VARIANT: u32 = 0x49454f;
+pub(crate) const TEXT: u32 = 0xe6e1e5;
+pub(crate) const TEXT2: u32 = 0xcac4d0;
+pub(crate) const ACCENT: u32 = 0xd0bcff;
+pub(crate) const ON_ACCENT: u32 = 0x381e72;
+pub(crate) const PRIMARY_CONTAINER: u32 = 0x4f378b;
+pub(crate) const ON_PRIMARY_CONTAINER: u32 = 0xeadcff;
+pub(crate) const ERROR: u32 = 0xf2b8b5;
+const MAX_FEED_ITEMS: usize = 18;
 
 // ───────────────────────────── the shell ─────────────────────────────
 
@@ -189,6 +204,7 @@ struct Shell {
     items: Load<Arc<Vec<Item>>>,
     continuation: Option<String>,
     serial: u64,
+    image_urls: Vec<String>,
     /// Open player (Track C3); the feed stays cached underneath for instant back.
     player: Option<Entity<player::Player>>,
 }
@@ -199,10 +215,10 @@ impl Shell {
         cx.subscribe_in(
             &search,
             window,
-            |this, state, ev: &InputEvent, _window, cx| {
+            |this, state, ev: &InputEvent, window, cx| {
                 if let InputEvent::PressEnter { .. } = ev {
                     let q = state.read(cx).value().trim().to_string();
-                    this.search_for(&q, cx);
+                    this.search_for(&q, window, cx);
                 }
             },
         )
@@ -213,6 +229,7 @@ impl Shell {
             items: Load::Loading,
             continuation: None,
             serial: 0,
+            image_urls: Vec::new(),
             player: None,
         };
         // A `streamtube://search?q=…` deep link opens straight into search
@@ -225,18 +242,58 @@ impl Shell {
                     .or_else(|| rest.strip_prefix("?query="))
             }) {
                 let q = streamtube_core::api::http::urldecode(q);
-                shell.search_for(&q, cx);
+                shell.search_for(&q, window, cx);
                 return shell;
             }
         }
-        shell.load_home(cx);
+        shell.load_home(window, cx);
         shell
+    }
+
+    fn item_image_urls(items: &[Item]) -> Vec<String> {
+        items
+            .iter()
+            .filter_map(|item| match item {
+                Item::Video(v) => Some(v.thumbnail.clone()),
+                Item::Channel(c) => c.avatar.clone(),
+                Item::Playlist(p) => p.thumbnail.clone(),
+            })
+            .filter(|url| !url.is_empty())
+            .collect()
+    }
+
+    fn evict_image(&mut self, cx: &mut App, url: String, window: Option<&mut Window>) {
+        let resource = Resource::Uri(url.as_str().into());
+        // Drop the decoded GPU texture as well as the cached load. Removing
+        // only the asset entry leaves the painted image in the window atlas.
+        if let Some(Ok(image)) = cx.fetch_asset::<ImgResourceLoader>(&resource) {
+            cx.drop_image(image, window);
+        }
+        cx.remove_asset::<ImgResourceLoader>(&resource);
+    }
+
+    fn clear_images(&mut self, cx: &mut App, mut window: Option<&mut Window>) {
+        for url in mem::take(&mut self.image_urls) {
+            self.evict_image(cx, url, window.as_deref_mut());
+        }
+    }
+
+    fn replace_items(&mut self, items: Arc<Vec<Item>>, cx: &mut App) {
+        let new_urls = Self::item_image_urls(&items);
+        for url in mem::take(&mut self.image_urls) {
+            if !new_urls.contains(&url) {
+                self.evict_image(cx, url, None);
+            }
+        }
+        self.image_urls = new_urls;
+        self.items = Load::Ready(items);
     }
 
     /// The unsigned home feed, exactly like the desktop's no-sign-in Home:
     /// a few Explore categories fetched in parallel, interleaved round-robin,
     /// de-duplicated.
-    fn load_home(&mut self, cx: &mut Context<Self>) {
+    fn load_home(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.clear_images(cx, Some(window));
         self.mode = Mode::Home;
         self.items = Load::Loading;
         self.continuation = None;
@@ -272,9 +329,12 @@ impl Shell {
                                 }
                             }
                             out.push(x);
+                            if out.len() >= MAX_FEED_ITEMS {
+                                break;
+                            }
                         }
                     }
-                    if !any {
+                    if out.len() >= MAX_FEED_ITEMS || !any {
                         break;
                     }
                 }
@@ -286,11 +346,21 @@ impl Shell {
                     return;
                 }
                 this.items = match res {
-                    Ok(items) if items.is_empty() => Load::Error(
-                        "The home feed came back empty. Check the network and retry.".into(),
-                    ),
-                    Ok(items) => Load::Ready(Arc::new(items)),
-                    Err(e) => Load::Error(e.to_string()),
+                    Ok(items) if items.is_empty() => {
+                        this.clear_images(cx, None);
+                        Load::Error(
+                            "The home feed came back empty. Check the network and retry.".into(),
+                        )
+                    }
+                    Ok(items) => {
+                        this.replace_items(Arc::new(items), cx);
+                        cx.notify();
+                        return;
+                    }
+                    Err(e) => {
+                        this.clear_images(cx, None);
+                        Load::Error(e.to_string())
+                    }
                 };
                 cx.notify();
             });
@@ -299,12 +369,13 @@ impl Shell {
         cx.notify();
     }
 
-    fn search_for(&mut self, q: &str, cx: &mut Context<Self>) {
+    fn search_for(&mut self, q: &str, window: &mut Window, cx: &mut Context<Self>) {
         log::info!("search_for: {q:?}");
         if q.is_empty() {
-            self.load_home(cx);
+            self.load_home(window, cx);
             return;
         }
+        self.clear_images(cx, Some(window));
         self.mode = Mode::Search(q.to_string());
         self.items = Load::Loading;
         self.continuation = None;
@@ -321,15 +392,21 @@ impl Shell {
                     return;
                 }
                 match res {
-                    Ok((items, cont)) => {
-                        this.items = if items.is_empty() {
-                            Load::Error(format!("No results for \u{201c}{q_err}\u{201d}"))
-                        } else {
-                            Load::Ready(Arc::new(items))
-                        };
+                    Ok((mut items, cont)) => {
+                        items.truncate(MAX_FEED_ITEMS);
                         this.continuation = cont;
+                        if items.is_empty() {
+                            this.clear_images(cx, None);
+                            this.items =
+                                Load::Error(format!("No results for \u{201c}{q_err}\u{201d}"));
+                        } else {
+                            this.replace_items(Arc::new(items), cx);
+                        }
                     }
-                    Err(e) => this.items = Load::Error(e.to_string()),
+                    Err(e) => {
+                        this.clear_images(cx, None);
+                        this.items = Load::Error(e.to_string());
+                    }
                 }
                 cx.notify();
             });
@@ -338,11 +415,16 @@ impl Shell {
         cx.notify();
     }
 
+    fn focus_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let focus = self.search.read(cx).focus_handle(cx);
+        window.focus(&focus, cx);
+    }
+
     /// Retry whatever the current view was trying to load.
-    fn reload(&mut self, cx: &mut Context<Self>) {
+    fn reload(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         match self.mode.clone() {
-            Mode::Home => self.load_home(cx),
-            Mode::Search(q) => self.search_for(&q, cx),
+            Mode::Home => self.load_home(window, cx),
+            Mode::Search(q) => self.search_for(&q, window, cx),
         }
     }
 
@@ -352,6 +434,7 @@ impl Shell {
             return;
         }
         log::info!("open_video: {} ({})", v.title, v.id);
+        self.clear_images(cx, Some(window));
         let player = cx.new(|cx| player::Player::new(v, cx));
         cx.subscribe_in(
             &player,
@@ -359,6 +442,11 @@ impl Shell {
             |this, _p, ev: &player::PlayerEvent, _w, cx| {
                 if matches!(ev, player::PlayerEvent::Back) {
                     this.player = None; // Player::drop tears mpv and the surface view down
+                    if let Load::Ready(items) = &this.items {
+                        // The feed was cached while its textures were evicted for
+                        // playback. Re-track the thumbnails that render again now.
+                        this.image_urls = Self::item_image_urls(items);
+                    }
                     cx.notify();
                 }
             },
@@ -376,49 +464,14 @@ impl Render for Shell {
         if let Some(player) = self.player.clone() {
             return div().size_full().child(player);
         }
-        let title = match &self.mode {
-            Mode::Home => "Home".to_string(),
-            Mode::Search(q) => format!("Search: {q}"),
+        let (title, subtitle) = match &self.mode {
+            Mode::Home => ("Home".to_string(), "Recommended for you".to_string()),
+            Mode::Search(q) => ("Search results".to_string(), q.clone()),
         };
+        let searching = matches!(self.mode, Mode::Search(_));
         let body: AnyElement = match &self.items {
-            Load::Loading => div()
-                .flex()
-                .w_full()
-                .justify_center()
-                .py_8()
-                .text_color(rgb(TEXT2))
-                .child("Loading…")
-                .into_any_element(),
-            Load::Error(e) => div()
-                .flex()
-                .flex_col()
-                .items_center()
-                .gap_3()
-                .py_8()
-                .child(
-                    div()
-                        .text_color(rgb(TEXT2))
-                        .text_size(px(13.))
-                        .child(e.clone()),
-                )
-                .child(
-                    div()
-                        .id("retry")
-                        .flex_none()
-                        .px_3()
-                        .py_1p5()
-                        .rounded_lg()
-                        .text_sm()
-                        .font_weight(FontWeight::MEDIUM)
-                        .cursor_pointer()
-                        .bg(rgb(ACCENT))
-                        // gpui-pre synthesizes a ClickEvent::Touch from a tap
-                        // gesture (interactive.rs) — on_click works on Android,
-                        // on_mouse_down does not (it only sees real mouse input).
-                        .on_click(cx.listener(|this, _, _, cx| this.reload(cx)))
-                        .child("Retry"),
-                )
-                .into_any_element(),
+            Load::Loading => loading_state().into_any_element(),
+            Load::Error(e) => error_state(e, cx).into_any_element(),
             Load::Ready(items) => div()
                 .flex_1()
                 .overflow_y_scrollbar()
@@ -426,6 +479,8 @@ impl Render for Shell {
                     div()
                         .flex()
                         .flex_col()
+                        .gap_4()
+                        .p_4()
                         .children(items.iter().map(|item| item_row(item, cx))),
                 )
                 .into_any_element(),
@@ -437,66 +492,311 @@ impl Render for Shell {
             .bg(rgb(BG))
             .text_color(rgb(TEXT))
             .child(
-                // search bar
                 div()
                     .flex()
-                    .items_center()
-                    .gap_2()
-                    .px_3()
-                    .py_2()
-                    .border_b_1()
-                    .border_color(rgb(BORDER))
+                    .flex_col()
+                    .gap_3()
+                    .px_4()
+                    .pt_3()
+                    .pb_2()
                     .child(
                         div()
-                            .flex_1()
-                            .child(Input::new(&self.search).cleanable(true)),
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap_0p5()
+                                    .child(
+                                        div()
+                                            .text_size(px(22.))
+                                            .font_weight(FontWeight::BOLD)
+                                            .child("Stream Tube"),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_size(px(12.))
+                                            .text_color(rgb(TEXT2))
+                                            .child("Open source video player"),
+                                    ),
+                            )
+                            .child(
+                                div()
+                                    .px_2()
+                                    .py_1()
+                                    .rounded_full()
+                                    .bg(rgb(PRIMARY_CONTAINER))
+                                    .text_size(px(10.))
+                                    .font_weight(FontWeight::BOLD)
+                                    .text_color(rgb(ON_PRIMARY_CONTAINER))
+                                    .child("BETA"),
+                            ),
                     )
                     .child(
                         div()
-                            .id("search-btn")
-                            .flex_none()
-                            .px_3()
-                            .py_1p5()
-                            .rounded_lg()
-                            .text_sm()
-                            .font_weight(FontWeight::MEDIUM)
-                            .cursor_pointer()
-                            .bg(rgb(ACCENT))
-                            .on_click(cx.listener(|this, _, _, cx| {
-                                let q = this.search.read(cx).value().trim().to_string();
-                                log::info!("search-btn pressed, query: {q:?}");
-                                this.search_for(&q, cx);
-                            }))
-                            .child("Search"),
+                            .h(px(48.))
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .px_2()
+                            .pl_4()
+                            .rounded_full()
+                            .bg(rgb(SURFACE_HIGH))
+                            .border_1()
+                            .border_color(rgb(SURFACE_VARIANT))
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .child(Input::new(&self.search).cleanable(true)),
+                            )
+                            .child(
+                                div()
+                                    .id("search-btn")
+                                    .flex_none()
+                                    .px_4()
+                                    .py_2()
+                                    .rounded_full()
+                                    .text_sm()
+                                    .font_weight(FontWeight::MEDIUM)
+                                    .cursor_pointer()
+                                    .bg(rgb(ACCENT))
+                                    .text_color(rgb(ON_ACCENT))
+                                    .on_click(cx.listener(|this, _, window, cx| {
+                                        let q = this.search.read(cx).value().trim().to_string();
+                                        this.search_for(&q, window, cx);
+                                    }))
+                                    .child("Go"),
+                            ),
                     ),
             )
             .child(
-                // section header
                 div()
                     .flex()
-                    .items_center()
-                    .gap_2()
-                    .px_3()
-                    .py_2()
-                    .child(div().text_sm().font_weight(FontWeight::BOLD).child(title))
-                    .when(matches!(self.mode, Mode::Search(_)), |d| {
-                        d.child(
-                            div()
-                                .id("back-home")
-                                .flex_none()
-                                .px_2()
-                                .py_1()
-                                .rounded_lg()
-                                .cursor_pointer()
-                                .text_sm()
-                                .text_color(rgb(TEXT2))
-                                .on_click(cx.listener(|this, _, _, cx| this.load_home(cx)))
-                                .child("Back to Home"),
-                        )
-                    }),
+                    .flex_col()
+                    .gap_1()
+                    .px_4()
+                    .pb_2()
+                    .child(
+                        div()
+                            .text_size(px(18.))
+                            .font_weight(FontWeight::BOLD)
+                            .child(title),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(12.))
+                            .text_color(rgb(TEXT2))
+                            .child(subtitle),
+                    ),
             )
             .child(body)
+            .child(bottom_nav(searching, cx))
     }
+}
+
+// ───────────────────────────── Material 3 states ─────────────────────────────
+
+fn loading_state() -> impl IntoElement {
+    div().flex_1().min_h_0().overflow_y_scrollbar().child(
+        div()
+            .flex()
+            .flex_col()
+            .gap_4()
+            .p_4()
+            .children((0..4).map(|_| {
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_2()
+                    .p_3()
+                    .rounded_md()
+                    .bg(rgb(SURFACE))
+                    .child(
+                        div()
+                            .w_full()
+                            .aspect_ratio(16. / 9.)
+                            .rounded_md()
+                            .bg(rgb(SURFACE_HIGH)),
+                    )
+                    .child(
+                        div()
+                            .w(relative(0.82))
+                            .h(px(14.))
+                            .rounded_full()
+                            .bg(rgb(SURFACE_HIGH)),
+                    )
+                    .child(
+                        div()
+                            .w(relative(0.48))
+                            .h(px(10.))
+                            .rounded_full()
+                            .bg(rgb(SURFACE_VARIANT)),
+                    )
+            })),
+    )
+}
+
+fn error_state(message: &str, cx: &mut Context<Shell>) -> Div {
+    div()
+        .size_full()
+        .min_h_0()
+        .flex()
+        .flex_col()
+        .p_4()
+        .gap_3()
+        .child(
+            div().flex_1().min_h_0().overflow_y_scrollbar().child(
+                div()
+                    .min_h_full()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .p_2()
+                    .child(
+                        div()
+                            .w_full()
+                            .max_w(px(420.))
+                            .flex()
+                            .flex_col()
+                            .items_center()
+                            .gap_3()
+                            .p_6()
+                            .rounded_md()
+                            .bg(rgb(SURFACE))
+                            .border_1()
+                            .border_color(rgb(SURFACE_VARIANT))
+                            .child(
+                                div()
+                                    .size(px(40.))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .gap_1()
+                                    .rounded_full()
+                                    .bg(rgb(ERROR))
+                                    .text_color(rgb(ON_ACCENT))
+                                    .text_size(px(20.))
+                                    .font_weight(FontWeight::BOLD)
+                                    .child("!"),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(16.))
+                                    .font_weight(FontWeight::MEDIUM)
+                                    .text_color(rgb(TEXT))
+                                    .text_center()
+                                    .child("Something went wrong"),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(13.))
+                                    .text_color(rgb(TEXT2))
+                                    .text_center()
+                                    .child(message.to_string()),
+                            ),
+                    ),
+            ),
+        )
+        .child(
+            div()
+                .id("retry")
+                .flex_none()
+                .w_full()
+                .max_w(px(420.))
+                .mx_auto()
+                .h(px(48.))
+                .flex()
+                .items_center()
+                .justify_center()
+                .rounded_full()
+                .bg(rgb(ACCENT))
+                .text_color(rgb(ON_ACCENT))
+                .text_sm()
+                .font_weight(FontWeight::MEDIUM)
+                .cursor_pointer()
+                .on_click(cx.listener(|this, _, window, cx| this.reload(window, cx)))
+                .child("Retry"),
+        )
+}
+
+fn bottom_nav(searching: bool, cx: &mut Context<Shell>) -> Div {
+    let home_active = !searching;
+    div()
+        .h(px(64.))
+        .flex_none()
+        .flex()
+        .border_t_1()
+        .border_color(rgb(SURFACE_VARIANT))
+        .bg(rgb(SURFACE))
+        .child(
+            div()
+                .id("nav-home")
+                .flex_1()
+                .flex()
+                .items_center()
+                .justify_center()
+                .cursor_pointer()
+                .on_click(cx.listener(|this, _, window, cx| this.load_home(window, cx)))
+                .child(
+                    div()
+                        .h(px(40.))
+                        .px_5()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .gap_1()
+                        .rounded_full()
+                        .bg(if home_active {
+                            rgb(PRIMARY_CONTAINER)
+                        } else {
+                            rgb(SURFACE)
+                        })
+                        .text_color(if home_active {
+                            rgb(ON_PRIMARY_CONTAINER)
+                        } else {
+                            rgb(TEXT2)
+                        })
+                        .text_sm()
+                        .font_weight(FontWeight::MEDIUM)
+                        .child("Home"),
+                ),
+        )
+        .child(
+            div()
+                .id("nav-search")
+                .flex_1()
+                .flex()
+                .items_center()
+                .justify_center()
+                .cursor_pointer()
+                .on_click(cx.listener(|this, _, window, cx| this.focus_search(window, cx)))
+                .child(
+                    div()
+                        .h(px(40.))
+                        .px_5()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .gap_1()
+                        .rounded_full()
+                        .bg(if searching {
+                            rgb(PRIMARY_CONTAINER)
+                        } else {
+                            rgb(SURFACE)
+                        })
+                        .text_color(if searching {
+                            rgb(ON_PRIMARY_CONTAINER)
+                        } else {
+                            rgb(TEXT2)
+                        })
+                        .text_sm()
+                        .font_weight(FontWeight::MEDIUM)
+                        .child("Search"),
+                ),
+        )
 }
 
 // ───────────────────────────── list rows ─────────────────────────────
@@ -505,10 +805,15 @@ fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
     match item {
         Item::Video(v) => video_row(v, cx).into_any_element(),
         Item::Channel(c) => div()
+            .w_full()
             .flex()
             .items_center()
             .gap_3()
-            .p_2()
+            .p_4()
+            .rounded_md()
+            .bg(rgb(SURFACE))
+            .border_1()
+            .border_color(rgb(SURFACE_VARIANT))
             .child(match &c.avatar {
                 Some(u) => img(u.clone())
                     .size_10()
@@ -542,9 +847,14 @@ fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
             )
             .into_any_element(),
         Item::Playlist(p) => div()
+            .w_full()
             .flex()
             .gap_3()
-            .p_2()
+            .p_4()
+            .rounded_md()
+            .bg(rgb(SURFACE))
+            .border_1()
+            .border_color(rgb(SURFACE_VARIANT))
             .child(match &p.thumbnail {
                 Some(u) => img(u.clone())
                     .w(px(120.))
@@ -595,11 +905,16 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
     .join("  ·  ");
     let video = v.clone();
     div()
+        .w_full()
         .flex()
-        .gap_3()
-        .p_2()
+        .flex_col()
+        .rounded_md()
+        .bg(rgb(SURFACE))
+        .border_1()
+        .border_color(rgb(SURFACE_VARIANT))
+        .overflow_hidden()
         // gpui-pre synthesizes ClickEvent::Touch from taps, so on_click works
-        // where on_mouse_down does not (see the Retry button above).
+        // where on_mouse_down does not.
         .id(v.id.clone())
         .cursor_pointer()
         .on_click(
@@ -607,10 +922,9 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
         )
         .child(
             img(v.thumbnail.clone())
-                .w(px(140.))
-                .h(px(79.))
-                .flex_none()
-                .rounded_md()
+                .w_full()
+                .aspect_ratio(16. / 9.)
+                .object_fit(ObjectFit::Cover)
                 .into_any_element(),
         )
         .child(
@@ -618,8 +932,13 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
                 .flex()
                 .flex_col()
                 .gap_1()
-                .min_w_0()
-                .child(div().text_size(px(14.)).child(v.title.clone()))
+                .p_3()
+                .child(
+                    div()
+                        .text_size(px(15.))
+                        .font_weight(FontWeight::MEDIUM)
+                        .child(v.title.clone()),
+                )
                 .child(
                     div()
                         .text_size(px(12.))
@@ -627,7 +946,7 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
                         .child(v.channel_name.clone()),
                 )
                 .when(!meta.is_empty(), |d| {
-                    d.child(div().text_size(px(12.)).text_color(rgb(TEXT2)).child(meta))
+                    d.child(div().text_size(px(11.)).text_color(rgb(TEXT2)).child(meta))
                 }),
         )
 }
