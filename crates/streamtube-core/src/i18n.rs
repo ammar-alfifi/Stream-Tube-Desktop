@@ -29,11 +29,14 @@ pub enum AppLanguage {
     ChineseSimplified,
     #[serde(rename = "zh-TW")]
     ChineseTraditional,
+    #[serde(rename = "ar")]
+    Arabic,
 }
 
 impl AppLanguage {
     pub const OPTIONS: &[(Self, &str)] = &[
         (Self::English, "English"),
+        (Self::Arabic, "العربية"),
         (Self::Azerbaijani, "Azərbaycanca"),
         (Self::German, "Deutsch"),
         (Self::French, "Français"),
@@ -59,7 +62,13 @@ impl AppLanguage {
             Self::Japanese => "ja",
             Self::ChineseSimplified => "zh-CN",
             Self::ChineseTraditional => "zh-TW",
+            Self::Arabic => "ar",
         }
+    }
+
+    /// Layout direction of the interface: Arabic renders right-to-left.
+    pub fn is_rtl(self) -> bool {
+        matches!(self, Self::Arabic)
     }
 
     fn catalog(self) -> Option<&'static Catalog> {
@@ -73,6 +82,7 @@ impl AppLanguage {
         static JA: Catalog = Catalog::new(include_str!("i18n/locales/ja.json"));
         static ZH_CN: Catalog = Catalog::new(include_str!("i18n/locales/zh-CN.json"));
         static ZH_TW: Catalog = Catalog::new(include_str!("i18n/locales/zh-TW.json"));
+        static AR: Catalog = Catalog::new(include_str!("i18n/locales/ar.json"));
 
         Some(match self {
             Self::English => return None,
@@ -86,6 +96,7 @@ impl AppLanguage {
             Self::Japanese => &JA,
             Self::ChineseSimplified => &ZH_CN,
             Self::ChineseTraditional => &ZH_TW,
+            Self::Arabic => &AR,
         })
     }
 
@@ -238,6 +249,23 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn arabic_is_the_only_right_to_left_language() {
+        for &(language, _) in AppLanguage::OPTIONS {
+            assert_eq!(language.is_rtl(), language == AppLanguage::Arabic);
+        }
+    }
+
+    #[test]
+    fn arabic_translates_with_local_digits_and_falls_back() {
+        assert_eq!(AppLanguage::Arabic.translate("Settings"), "الإعدادات");
+        assert_eq!(AppLanguage::Arabic.translate("30s"), "٣٠ ث");
+        assert_eq!(
+            AppLanguage::Arabic.translate("An untranslated label"),
+            "An untranslated label"
+        );
     }
 
     #[test]

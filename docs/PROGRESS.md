@@ -10,5 +10,6 @@ Last updated: 2026-11-26
 | B1 gpui-mobile alignment | 0 | in progress | - | compare exact gpui-pre/wgpu graph and shell APIs |
 | C1 controller state split | 0 | pending | - | identify GPUI-free state/queue/resume/SponsorBlock logic |
 | C2 libmpv binaries | 1 | binaries proven; CI LGPL build pending | `docs/evidence/C2/` (29 hashes OK, 16KB, emulator mpv_initialize=0) | package jniLibs and decide LGPL build for public release |
+| Arabic core locale | 1 | core done; UI/IME audit pending | `docs/evidence/E-ar/` (837 keys, 7/7 i18n tests) | RTL/shaping/IME and dynamic plurals in Android shell |
 | SponsorBlock live API probe | 1 | done | `docs/evidence/sponsorblock-live.log` (HTTP path reachable; sample video had zero segments) | prove an actual skip on a video with segments in the player |
 | Environment/fork/emulator/signing | 1 | done | `docs/evidence/environment/setup.md`; fork PR #1; emulator-5554 booted | keep emulator warm for APK verification |
