@@ -5,8 +5,16 @@
 // The .so must exist in app/src/main/jniLibs/<abi>/ before assembleDebug;
 // see the buildRust* tasks in the root build.gradle.kts.
 
+import java.io.File
+import java.util.Properties
+
 plugins {
     id("com.android.application")
+}
+
+val releaseKeyProperties = Properties().apply {
+    val file = File(System.getProperty("user.home"), ".android/streamtube-release.properties")
+    if (file.isFile) file.inputStream().use { load(it) }
 }
 
 android {
@@ -30,8 +38,20 @@ android {
         manifestPlaceholders["nativeLibraryName"] = "streamtube_android"
     }
 
+    signingConfigs {
+        if (releaseKeyProperties.containsKey("storeFile")) {
+            create("release") {
+                storeFile = file(releaseKeyProperties.getProperty("storeFile"))
+                storePassword = releaseKeyProperties.getProperty("storePassword")
+                keyAlias = releaseKeyProperties.getProperty("keyAlias")
+                keyPassword = releaseKeyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
