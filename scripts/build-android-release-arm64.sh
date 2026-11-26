@@ -26,9 +26,10 @@ done
 # release carry an extra ~81 MB. Move it aside for packaging, then restore it so
 # the next emulator build still has its libraries.
 X86="android/app/src/main/jniLibs/x86_64"
+X86_ASIDE="android/app/src/main/x86_64.release-skip"
 if [ -d "$X86" ]; then
-  mv "$X86" "$X86.release-skip"
-  trap 'mv "$X86.release-skip" "$X86" 2>/dev/null || true' EXIT
+  mv "$X86" "$X86_ASIDE"
+  trap 'mv "$X86_ASIDE" "$X86" 2>/dev/null || true' EXIT
 fi
 
 cd android
