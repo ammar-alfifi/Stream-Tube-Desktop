@@ -189,7 +189,7 @@ adb logcat -d | grep -E "FATAL|AndroidRuntime"   # يجب أن يكون فارغ
 
 ## 8) حقائق مُتحقَّق منها (لا تُعد تخمينها)
 
-- **المرحلة 0 منجزة:** `crates/streamtube-core` (api/store/feed/import/player{proxy,shorts_preload,aspect}/i18n/locale/perf/recommend) تُترجم لـ aarch64؛ 77 اختباراً أخضر؛ سطح المكتب سليم؛ `store::set_data_dir` مضاف؛ TLS بـ webpki-roots؛ بوابة Android CI مضافة (NDK r27c + cargo-ndk 4.1.2) لكن لم تُشغّل بعيداً.
+- **المرحلة 0 منجزة:** `crates/streamtube-core` (api/store/feed/import/player{proxy,shorts_preload,aspect}/i18n/locale/perf/recommend/playback) تُترجم لـ aarch64؛ سطح المكتب سليم؛ `store::set_data_dir` مضاف؛ TLS بـ webpki-roots؛ بوابة Android CI (NDK r27c + cargo-ndk 4.1.2) نجحت remotely على commit `5440e39` مع linux/windows.
 - `mpv/controller/preview/view` ما زالت في غلاف سطح المكتب (مرتبطة بـ GPUI) → C1 يفصلها.
 - `third_party/ejs` سكربتات yt.solver **غير موصولة**؛ لا محرك JS؛ سطح المكتب يستخدم yt-dlp الخارجي → Track A حرج.
 - gpui-mobile الحالي: `gpui-pre =0.3.12` + `gpui-pre-wgpu =0.3.12` (أندرويد wgpu 30.0.2؛ wgpu 29 خاص بـiOS)، رخصة ثلاثية (اختر Apache-2.0)، arm64/API26+ مُختبَر.
