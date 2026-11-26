@@ -553,6 +553,13 @@ impl Shell {
         cx.notify();
     }
 
+    fn begin_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.mode = Mode::Search(String::new());
+        self.items = Load::Ready(Arc::new(Vec::new()));
+        self.focus_search(window, cx);
+        cx.notify();
+    }
+
     fn focus_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let focus = self.search.read(cx).focus_handle(cx);
         window.focus(&focus, cx);
@@ -641,7 +648,7 @@ impl Render for Shell {
                     .pb_2()
                     .child(
                         div()
-                            .h(px(40.))
+                            .h(px(44.))
                             .flex()
                             .items_center()
                             .gap_2()
@@ -658,8 +665,7 @@ impl Render for Shell {
                                         Icon::new(gpui_kit::assets::IconName::Play)
                                             .size(px(20.))
                                             .text_color(rgb(ON_ACCENT)),
-                                    )
-                                    .into_any_element(),
+                                    ),
                             )
                             .child(
                                 div()
@@ -670,71 +676,147 @@ impl Render for Shell {
                                     .font_weight(FontWeight::BOLD)
                                     .child("Stream")
                                     .child(div().text_color(rgb(ACCENT)).child("Tube")),
-                            ),
-                    )
-                    .child(
-                        div()
-                            .h(px(48.))
-                            .flex()
-                            .items_center()
-                            .gap_1()
-                            .pl_4()
-                            .pr_1()
-                            .rounded_full()
-                            .bg(rgb(SURFACE_HIGH))
-                            .border_1()
-                            .border_color(if search_focused {
-                                rgb(TEXT)
-                            } else {
-                                rgb(SURFACE_HIGH)
-                            })
-                            .id("search-field")
-                            .cursor_pointer()
-                            .on_click(
-                                cx.listener(|this, _, window, cx| this.focus_search(window, cx)),
                             )
-                            .child(
-                                div().flex_1().min_w_0().child(
-                                    Input::new(&self.search)
-                                        .appearance(false)
-                                        .cleanable(true)
-                                        .prefix(
+                            .when(!searching, |d| {
+                                d.child(
+                                    div()
+                                        .id("open-search")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label("Search")
+                                        .tab_index(0)
+                                        .size(px(44.))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded_full()
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            this.begin_search(window, cx)
+                                        }))
+                                        .child(
                                             Icon::new(gpui_kit::assets::IconName::Search)
-                                                .size(px(20.))
-                                                .text_color(rgb(TEXT2)),
+                                                .size(px(24.))
+                                                .text_color(rgb(TEXT)),
+                                        ),
+                                )
+                                .child(
+                                    div()
+                                        .id("you")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label("Library")
+                                        .tab_index(0)
+                                        .size(px(32.))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded_full()
+                                        .bg(rgb(SURFACE_HIGH))
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            this.load_library(window, cx)
+                                        }))
+                                        .child(
+                                            div()
+                                                .text_size(px(13.))
+                                                .font_weight(FontWeight::BOLD)
+                                                .child("A"),
+                                        ),
+                                )
+                            }),
+                    )
+                    .when(searching, |d| {
+                        d.child(
+                            div()
+                                .h(px(48.))
+                                .flex()
+                                .items_center()
+                                .gap_2()
+                                .child(
+                                    div()
+                                        .id("close-search")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label("Back")
+                                        .tab_index(0)
+                                        .size(px(40.))
+                                        .flex_none()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded_full()
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|this, _, window, cx| {
+                                            this.load_home(window, cx)
+                                        }))
+                                        .child(
+                                            Icon::new(if i18n::language().is_rtl() {
+                                                gpui_kit::assets::IconName::ArrowRight
+                                            } else {
+                                                gpui_kit::assets::IconName::ArrowLeft
+                                            })
+                                            .size(px(24.))
+                                            .text_color(rgb(TEXT)),
+                                        ),
+                                )
+                                .child(
+                                    div()
+                                        .h(px(44.))
+                                        .flex_1()
+                                        .min_w_0()
+                                        .flex()
+                                        .items_center()
+                                        .gap_1()
+                                        .pl_3()
+                                        .pr_1()
+                                        .rounded_full()
+                                        .bg(rgb(SURFACE_HIGH))
+                                        .border_1()
+                                        .border_color(if search_focused {
+                                            rgb(TEXT)
+                                        } else {
+                                            rgb(SURFACE_HIGH)
+                                        })
+                                        .child(
+                                            div().flex_1().min_w_0().child(
+                                                Input::new(&self.search)
+                                                    .appearance(false)
+                                                    .cleanable(true)
+                                                    .prefix(
+                                                        Icon::new(gpui_kit::assets::IconName::Search)
+                                                            .size(px(20.))
+                                                            .text_color(rgb(TEXT2)),
+                                                    ),
+                                            ),
+                                        )
+                                        .child(
+                                            div()
+                                                .id("search-btn")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label("Search")
+                                                .tab_index(0)
+                                                .size(px(40.))
+                                                .flex_none()
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .rounded_full()
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, window, cx| {
+                                                    let q = this.search.read(cx).value().trim().to_string();
+                                                    this.search_for(&q, window, cx);
+                                                }))
+                                                .child(
+                                                    Icon::new(if i18n::language().is_rtl() {
+                                                        gpui_kit::assets::IconName::ArrowLeft
+                                                    } else {
+                                                        gpui_kit::assets::IconName::ArrowRight
+                                                    })
+                                                    .size(px(22.))
+                                                    .text_color(rgb(TEXT)),
+                                                ),
                                         ),
                                 ),
-                            )
-                            .child(
-                                div()
-                                    .id("search-btn")
-                                    .role(gpui_kit::Role::Button)
-                                    .aria_label("Search")
-                                    .tab_index(0)
-                                    .size(px(48.))
-                                    .flex_none()
-                                    .flex()
-                                    .items_center()
-                                    .justify_center()
-                                    .rounded_full()
-                                    .cursor_pointer()
-                                    .bg(rgb(ACCENT))
-                                    .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
-                                    .on_click(cx.listener(|this, _, window, cx| {
-                                        let q = this.search.read(cx).value().trim().to_string();
-                                        this.search_for(&q, window, cx);
-                                    }))
-                                    .child(
-                                        Icon::new(if i18n::language().is_rtl() {
-                                            gpui_kit::assets::IconName::ArrowLeft
-                                        } else {
-                                            gpui_kit::assets::IconName::ArrowRight
-                                        })
-                                        .size(px(24.))
-                                        .text_color(rgb(ON_ACCENT)),
-                                    ),
-                            ),
-                    ),
+                        )
+                    }),
             )
             .when(matches!(self.mode, Mode::Home | Mode::Search(_)), |d| {
                 d.child(if searching {
