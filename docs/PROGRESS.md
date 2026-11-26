@@ -8,4 +8,5 @@ Last updated: 2026-11-26
 | A1 android_vr/visionOS extraction | 0 | in progress | - | probe real player responses and stream URLs |
 | B1 gpui-mobile alignment | 0 | in progress | - | compare exact gpui-pre/wgpu graph and shell APIs |
 | C1 controller state split | 0 | pending | - | identify GPUI-free state/queue/resume/SponsorBlock logic |
+| SponsorBlock live API probe | 1 | done | `docs/evidence/sponsorblock-live.log` (HTTP path reachable; sample video had zero segments) | prove an actual skip on a video with segments in the player |
 | Environment/fork/emulator/signing | 1 | done | `docs/evidence/environment/setup.md`; fork PR #1; emulator-5554 booted | keep emulator warm for APK verification |
