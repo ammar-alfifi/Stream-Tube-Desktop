@@ -1,0 +1,24 @@
+warning: fields `set_option` and `wakeup` are never read
+   --> crates/streamtube-core/src/player/mpv.rs:148:5
+    |
+143 | struct Fns {
+    |        --- fields in this struct
+...
+148 |     set_option: unsafe extern "C" fn(*mut mpv_handle, *const c_char, c_int, *mut c_void) -> c_int,
+    |     ^^^^^^^^^^
+...
+157 |     wakeup: unsafe extern "C" fn(*mut mpv_handle),
+    |     ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `streamtube-core` (lib) generated 1 warning
+   Compiling streamtube-core v0.7.5-alpha (/home/ammar/projects/Stream-Tube-Desktop/crates/streamtube-core)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.77s
+     Running `target/debug/examples/ejs_update_probe`
+installed EJS 0.8.0
+installed solver result: abc -> abc_n
+active generation: 0.8.0-413144-1795705193590099853
+yt.solver.lib.min.js: 151561 bytes
+yt.solver.core.min.js: 6945 bytes
+SHA256SUMS: 175 bytes
