@@ -1,0 +1,19 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.18s
+     Running `target/debug/examples/a1_harness dQw4w9WgXcQ`
+[a1] harness start: video=dQw4w9WgXcQ data_dir=/home/ammar/.hermes/cache/scratch/a1-harness-317716
+[a1] chain: ANDROID_VR -> visionOS -> iOS (no yt-dlp involved)
+[a1] resolved: client=ANDROID_VR 1.65.10 (Oculus Quest 3) source=innertube title="Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" live=false formats: video=22 audio=4 muxed=1 hls_url=false
+[a1] best video: 1920x1080 25fps codecs=vp9 itag=248 label=1080p
+[a1] video Range GET bytes=0-1048575 -> HTTP 206, 1048576 bytes
+[a1]   https://rr7---sn-nuj-wxqy.googlevideo.com/videoplayback?expire=1795714163&ei=ExgIa_WeJM6KvdIPsrW6-Ag&ip=151.255.40.183&id=o-AE79t_F9drW7vDRlFP5N2UGu-LjfLBkw2p-NbFijSB9O&itag=248&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=781&met=1795692563%2C&mh=7c&mm=18%2C29&mn=sn-nuj-wxqy%2Csn-2ohpa5-5h&ms=aub%2Crdu&mv=m&mvi=7&pl=24&rms=aub%2Caub&pcm2=no&initcwndbps=643125&bui=AZFAFb_CxnWNDuXijVQlZ2e1lnL0UPFwe5LHVKLHZLy0xrpkN-OqCNLlK_1GDTZpgIGaJ6fbDhnRYnLR&spc=nfZ8ZiMwHnG_9i4A6O2aBEovJ81Lk4TtOwrXuRs7xqODeqIItg&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=30846580&dur=213.040&lmt=1766963494258902&mt=1795692083&fvip=1&epbp=1&keepalive=yes&fexp=51565115&c=ANDROID_VR&txp=5532534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cpcm2%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIgNI1Z3i9oQWnzHEA0VZAOMRbCzny9F5DVPmYYROMCk94CIQCJwtZ60zK_dJc9SqXhWgeWiVyO0xXqk4ax2JVnzcHWtQ%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAI-Vv88rjjGEntbQHfWY-txwFZbxuxk0xdXJryzNnPyOAiEA-EjYZhDP1BV8FDg2pQALvpg2c-VnOZLn2L-IkEFYLc4%3D
+[a1] best audio: codecs=opus itag=251 label=""
+[a1] audio Range GET bytes=0-262143 -> HTTP 206, 262144 bytes
+[a5] general fallback (known-valid public streams)
+[hls] master -> HTTP 200, 752 bytes, 5 variants
+[hls]   https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+[hls] variant -> HTTP 200, 3606 bytes
+[hls]   https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8
+[hls] segment -> HTTP 200, 1915156 bytes
+[a5] mp4 Range GET bytes=0-1048575 -> HTTP 206, 1048576 bytes
+[a5]   https://media.w3.org/2010/05/sintel/trailer.mp4
+[a1] FINAL VERDICT: A1_OK: playable YouTube stream proven without yt-dlp (fallback_ok=true)

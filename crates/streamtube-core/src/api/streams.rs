@@ -59,6 +59,14 @@ fn resolve(video_id: &str) -> Result<StreamInfo> {
     with_sign_in_fallback(video_id, res)
 }
 
+/// On Android there is no yt-dlp binary and no desktop, so the backend
+/// setting is moot: the built-in Innertube chain only (plan2.md Track A1).
+#[cfg(target_os = "android")]
+fn resolve_anonymous(video_id: &str) -> Result<StreamInfo> {
+    android_vr_first(video_id)
+}
+
+#[cfg(not(target_os = "android"))]
 fn resolve_anonymous(video_id: &str) -> Result<StreamInfo> {
     let mode = crate::store::settings_snapshot().stream_backend.clone();
     match mode.as_str() {
@@ -67,10 +75,7 @@ fn resolve_anonymous(video_id: &str) -> Result<StreamInfo> {
         "visionos" | "innertube" => visionos(video_id)
             .or_else(|e| ios(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
             .or_else(|e| android_vr(video_id).map_err(|e2| anyhow!("{e}\n{e2}"))),
-        "android_vr" => android_vr(video_id)
-            .and_then(|i| if i.video.is_empty() && i.hls_url.is_none() { Err(anyhow!("Android VR returned no playable formats")) } else { Ok(i) })
-            .or_else(|e| visionos(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
-            .or_else(|e| ios(video_id).map_err(|e2| anyhow!("{e}\n{e2}"))),
+        "android_vr" => android_vr_first(video_id),
         _ => {
             // The visionOS client hands out an HLS manifest that needs neither a
             // PO token nor JS challenge solving: fast, and works signed out.
@@ -114,6 +119,16 @@ fn resolve_anonymous(video_id: &str) -> Result<StreamInfo> {
             }
         }
     }
+}
+
+/// The extraction chain Android uses on its own: ANDROID_VR's direct formats
+/// first, then the Apple clients' HLS manifests (kids videos refuse the first
+/// two). No yt-dlp anywhere — Android has none (plan2.md Track A1).
+pub fn android_vr_first(video_id: &str) -> Result<StreamInfo> {
+    android_vr(video_id)
+        .and_then(|i| if i.video.is_empty() && i.hls_url.is_none() { Err(anyhow!("Android VR returned no playable formats")) } else { Ok(i) })
+        .or_else(|e| visionos(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
+        .or_else(|e| ios(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
 }
 
 type Cache = std::collections::HashMap<String, (StreamInfo, std::time::Instant)>;
@@ -815,6 +830,13 @@ pub fn hide_window(_cmd: &mut std::process::Command) {}
 pub fn ytdlp_streams(_video_id: &str) -> Result<StreamInfo> {
     Err(anyhow!("yt-dlp is not available on Android"))
 }
+
+/// Known-valid public streams (plan2.md Track A5) to prove the playback line
+/// end-to-end when YouTube refuses every client (DR-2): Big Buck Bunny HLS from
+/// mux's test streams, and the Blender Sintel trailer as MP4. Both verified
+/// reachable anonymously; see docs/evidence/A1.
+pub const FALLBACK_HLS: &str = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+pub const FALLBACK_MP4: &str = "https://media.w3.org/2010/05/sintel/trailer.mp4";
 
 /// Selects the best video + audio pair for a max height and codec preference.
 /// YouTube-style quality class ("1080p") for a format, independent of aspect ratio:

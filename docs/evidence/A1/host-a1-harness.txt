@@ -1,0 +1,23 @@
+# command: cargo run -p streamtube-core --example a1_harness -- dQw4w9WgXcQ
+# date: 2026-11-26 11:12:13 UTC  host: Fedora Linux x86_64
+# (final clean run; the debugging trail that led here is in network-troubleshooting.md)
+    Blocking waiting for file lock on build directory
+    Finished `dev` profile [optimized + debuginfo] target(s) in 42.70s
+     Running `target/debug/examples/a1_harness dQw4w9WgXcQ`
+[a1] harness start: video=dQw4w9WgXcQ data_dir=/home/ammar/.hermes/cache/scratch/a1-harness-302977
+[a1] chain: ANDROID_VR -> visionOS -> iOS (no yt-dlp involved)
+[a1] resolved: client=ANDROID_VR 1.65.10 (Oculus Quest 3) source=innertube title="Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" live=false formats: video=22 audio=4 muxed=1 hls_url=false
+[a1] best video: 1920x1080 25fps codecs=vp9 itag=248 label=1080p
+[a1] video Range GET bytes=0-1048575 -> HTTP 206, 1048576 bytes
+[a1]   https://rr7---sn-nuj-wxqy.googlevideo.com/videoplayback?expire=1795713177&ei=ORQIa_nvAZ6KvdIPgcHggAk&ip=151.255.40.183&id=o-APdPNQBWwj9vhjjdgjEN6lWKqeTxfNOC_hGIZRvGcLWt&itag=248&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=1167&met=1795691577%2C&mh=7c&mm=18%2C29&mn=sn-nuj-wxqy%2Csn-2ohpa5-5h&ms=aub%2Crdu&mv=m&mvi=7&pl=24&rms=aub%2Caub&pcm2=no&initcwndbps=672750&bui=AZFAFb9E7aWcyzbbf3pHDl3rr7rECUqzCb7mjmogsHeplT0-OUS7XfLJ_BU_W9rRPHW_Lt5m_EanqJnk&spc=nfZ8Zu_5tH3uMmOnw9fUIs9qg5R4QQZ6oQL8TiZY6bWwCKOVWw&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=30846580&dur=213.040&lmt=1766963494258902&mt=1795691134&fvip=1&epbp=1&keepalive=yes&fexp=51565115&c=ANDROID_VR&txp=5532534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cpcm2%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhALbfv6JMlN0hRzpn7Y6y7c5hwNJ3OMgYNScx2QMP43uPAiBgqim_JOHhj2BfFuuEQuuSGjco_QiuM0GSBElqHr72aQ%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhAIaMoR-hINnubibP_9xD_K_sbdUglEYDAAXqRqYWBlCaAiEApcr0E-lD-9ocV58ilWn_OCig0Tqd1-ZQeJhtzW-IhDU%3D
+[a1] best audio: codecs=opus itag=251 label=""
+[a1] audio Range GET bytes=0-262143 -> HTTP 206, 262144 bytes
+[a5] general fallback (known-valid public streams)
+[hls] master -> HTTP 200, 752 bytes, 5 variants
+[hls]   https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+[hls] variant -> HTTP 200, 3606 bytes
+[hls]   https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8
+[hls] segment -> HTTP 200, 1915156 bytes
+[a5] mp4 Range GET bytes=0-1048575 -> HTTP 206, 1048576 bytes
+[a5]   https://media.w3.org/2010/05/sintel/trailer.mp4
+[a1] FINAL VERDICT: A1_OK: playable YouTube stream proven without yt-dlp (fallback_ok=true)
