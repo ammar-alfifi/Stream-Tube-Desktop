@@ -83,13 +83,12 @@ android {
     }
 
     packaging {
-        // Do not strip the Rust library — it is already stripped (or carries
-        // wanted debug info) as cargo produced it.
+        // Native libraries stay uncompressed for 16 KB page alignment. They
+        // are stripped by scripts/build-android-release-arm64.sh before Gradle
+        // packages them; keeping debug symbols here used to add ~14 MB of
+        // symtab/strtab to every Rust .so.
         jniLibs {
-            keepDebugSymbols += listOf(
-                "*/arm64-v8a/libstreamtube_android.so",
-                "*/x86_64/libstreamtube_android.so",
-            )
+            useLegacyPackaging = false
         }
     }
 

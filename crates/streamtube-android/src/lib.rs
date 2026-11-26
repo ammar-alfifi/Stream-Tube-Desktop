@@ -203,7 +203,7 @@ pub(crate) const SURFACE_HIGH: u32 = 0x272727;
 pub(crate) const SURFACE_VARIANT: u32 = 0x303030;
 pub(crate) const TEXT: u32 = 0xf1f1f1;
 pub(crate) const TEXT2: u32 = 0xaaaaaa;
-pub(crate) const ACCENT: u32 = 0xd5001f;
+pub(crate) const ACCENT: u32 = 0xff0033;
 pub(crate) const ON_ACCENT: u32 = 0xffffff;
 pub(crate) const PRIMARY_CONTAINER: u32 = 0x3c1518;
 pub(crate) const ON_PRIMARY_CONTAINER: u32 = 0xffdad6;
@@ -1000,18 +1000,11 @@ fn nav_item(
         .child(
             div()
                 .h(px(32.))
-                .px_4()
                 .flex()
                 .items_center()
                 .justify_center()
-                .rounded_full()
-                .bg(if active {
-                    rgb(PRIMARY_CONTAINER)
-                } else {
-                    rgb(SURFACE)
-                })
-                .child(Icon::new(icon).size(px(22.)).text_color(if active {
-                    rgb(ON_PRIMARY_CONTAINER)
+                .child(Icon::new(icon).size(px(24.)).text_color(if active {
+                    rgb(TEXT)
                 } else {
                     rgb(TEXT2)
                 })),
