@@ -1043,7 +1043,7 @@ impl AppView {
                                     .hover(|s| s.underline())
                                     .child(shown_url)
                                     .on_click(move |_, _, _| {
-                                        let _ = open::that(&url2);
+                                        let _ = crate::platform::open(&url2);
                                     }),
                             ),
                         )
@@ -1082,7 +1082,7 @@ impl AppView {
                         .child(pill("si-open", Some("external-link"), "Copy code & open", cx).bg(p.link).text_color(white()).on_click(
                             move |_, _, cx| {
                                 copy_to_clipboard(code.clone(), cx);
-                                let _ = open::that(&url);
+                                let _ = crate::platform::open(&url);
                             },
                         )),
                 );
@@ -1921,7 +1921,7 @@ impl AppView {
                                     .child(footer_btn("dlp-folder", "Open folder").on_click(|_, _, _| {
                                         let d = store::settings_snapshot().download_dir.clone();
                                         let _ = std::fs::create_dir_all(&d);
-                                        let _ = open::that(d);
+                                        let _ = crate::platform::open(d);
                                     }))
                                     .child(footer_btn("dlp-page", "Open downloads page").on_click(cx.listener(|this, _, window, cx| {
                                         this.dl_panel = false;
@@ -3513,7 +3513,7 @@ pub fn reveal_in_folder(path: &str, cx: &mut App) {
         return;
     }
     if path.is_dir() {
-        let _ = open::that(path);
+        let _ = crate::platform::open(path);
         return;
     }
     #[cfg(windows)]
@@ -3525,14 +3525,14 @@ pub fn reveal_in_folder(path: &str, cx: &mut App) {
         let _ = std::thread::Builder::new().name("reveal-in-folder".into()).spawn(move || {
             if !select_in_explorer(&path) {
                 if let Some(folder) = path.parent() {
-                    let _ = open::that(folder);
+                    let _ = crate::platform::open(folder);
                 }
             }
         });
     }
     #[cfg(not(windows))]
     if let Some(folder) = path.parent() {
-        let _ = open::that(folder);
+        let _ = crate::platform::open(folder);
     }
 }
 

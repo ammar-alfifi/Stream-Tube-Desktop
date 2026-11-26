@@ -65,7 +65,7 @@ impl Preloads {
     }
 }
 
-pub(super) fn suspend() {
+pub fn suspend() {
     if let Some(state) = STATE.get() {
         state.lock().ready = false;
     }
@@ -147,7 +147,7 @@ pub(super) fn cached(url: &str) -> Option<Media> {
 }
 
 /// Counts media bytes actually written from this Short's cache to the player.
-pub(super) fn served_bytes(id: &str) -> u64 {
+pub fn served_bytes(id: &str) -> u64 {
     let Some(state) = STATE.get() else { return 0 };
     let state = state.lock();
     state.videos.get(id).map_or(0, |entry| {
@@ -334,7 +334,7 @@ fn rendition_uris(selected: &str) -> impl Iterator<Item = String> + '_ {
 }
 
 /// Use the shortest verified opening among the audio and video renditions mpv will request.
-pub(super) fn hls_opening_seconds(url: &str, quality: u32, audio: Option<&str>) -> Option<f64> {
+pub fn hls_opening_seconds(url: &str, quality: u32, audio: Option<&str>) -> Option<f64> {
     let master = cached(url)?;
     if let Some(seconds) = master.opening_seconds {
         return Some(seconds);

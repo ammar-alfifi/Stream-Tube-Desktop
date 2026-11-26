@@ -114,7 +114,7 @@ impl Render for DownloadsPage {
                                     }))
                                     .child(pill("dl-folder", Some("folder-open"), "Open folder", cx).on_click(move |_, _, _| {
                                         let _ = std::fs::create_dir_all(&dir2);
-                                        let _ = open::that(&dir2);
+                                        let _ = crate::platform::open(&dir2);
                                     })),
                             ),
                     )

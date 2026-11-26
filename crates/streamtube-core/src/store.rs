@@ -147,6 +147,18 @@ pub struct Settings {
     pub always_show_tab_bar: bool,
 }
 
+#[cfg(not(target_os = "android"))]
+fn default_download_dir() -> String {
+    dirs::download_dir()
+        .map(|d| d.join("Stream Tube").to_string_lossy().into_owned())
+        .unwrap_or_default()
+}
+
+#[cfg(target_os = "android")]
+fn default_download_dir() -> String {
+    String::new()
+}
+
 impl Default for Settings {
     fn default() -> Self {
         let mut sb = HashMap::new();
@@ -220,9 +232,7 @@ impl Default for Settings {
             show_player_title: false,
             eq_preset: "flat".into(),
             always_show_tab_bar: false,
-            download_dir: dirs::download_dir()
-                .map(|d| d.join("Stream Tube").to_string_lossy().into_owned())
-                .unwrap_or_default(),
+            download_dir: default_download_dir(),
             download_dir_chosen: false,
             download_format: "1080".into(),
             external_player: String::new(),
@@ -392,9 +402,26 @@ fn make_private(dir: &std::path::Path) {
 #[cfg(not(unix))]
 fn make_private(_dir: &std::path::Path) {}
 
+static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
+static DATA_DIR_OVERRIDE: OnceLock<PathBuf> = OnceLock::new();
+
+/// Sets the app-private data directory before any store operation. The Android
+/// shell passes `context.filesDir` through JNI before calling [`init`].
+pub fn set_data_dir(path: impl Into<PathBuf>) -> bool {
+    if DATA_DIR.get().is_some() {
+        return false;
+    }
+    DATA_DIR_OVERRIDE.set(path.into()).is_ok()
+}
+
 pub fn data_dir() -> PathBuf {
-    static DIR: OnceLock<PathBuf> = OnceLock::new();
-    DIR.get_or_init(|| {
+    DATA_DIR
+        .get_or_init(|| {
+        if let Some(d) = DATA_DIR_OVERRIDE.get() {
+            let _ = std::fs::create_dir_all(d);
+            make_private(d);
+            return d.clone();
+        }
         // a separate profile (portable use, clean test runs)
         if let Some(d) = std::env::var_os("STREAMTUBE_DATA_DIR").filter(|d| !d.is_empty()) {
             let d = PathBuf::from(d);
@@ -409,28 +436,33 @@ pub fn data_dir() -> PathBuf {
             let _ = std::fs::create_dir_all(&d);
             return d;
         }
-        let base = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
-        let d = base.join("StreamTube");
-        // carry over data from the app's previous name
-        let old = base.join("Ferrotube");
-        if !d.exists() && old.exists() {
-            let _ = std::fs::rename(&old, &d);
-        }
-        let _ = std::fs::create_dir_all(&d);
-        make_private(&d);
-        // A -wal/-shm left without its database belongs to some other copy of it;
-        // SQLite would replay it onto whatever database is put there next and
-        // damage it, so drop it before anything opens the database.
-        if !d.join("streamtube.db").exists() {
-            let _ = std::fs::remove_file(d.join("streamtube.db-wal"));
-            let _ = std::fs::remove_file(d.join("streamtube.db-shm"));
-        }
-        if !d.join("streamtube.db").exists() && d.join("ferrotube.db").exists() {
-            for ext in ["", "-wal", "-shm"] {
-                let _ = std::fs::rename(d.join(format!("ferrotube.db{ext}")), d.join(format!("streamtube.db{ext}")));
+        #[cfg(all(target_os = "android", not(test)))]
+        panic!("Android requires set_data_dir(context.filesDir) before store::init()");
+        #[cfg(all(not(target_os = "android"), not(test)))]
+        {
+            let base = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
+            let d = base.join("StreamTube");
+            // carry over data from the app's previous name
+            let old = base.join("Ferrotube");
+            if !d.exists() && old.exists() {
+                let _ = std::fs::rename(&old, &d);
             }
+            let _ = std::fs::create_dir_all(&d);
+            make_private(&d);
+            // A -wal/-shm left without its database belongs to some other copy of it;
+            // SQLite would replay it onto whatever database is put there next and
+            // damage it, so drop it before anything opens the database.
+            if !d.join("streamtube.db").exists() {
+                let _ = std::fs::remove_file(d.join("streamtube.db-wal"));
+                let _ = std::fs::remove_file(d.join("streamtube.db-shm"));
+            }
+            if !d.join("streamtube.db").exists() && d.join("ferrotube.db").exists() {
+                for ext in ["", "-wal", "-shm"] {
+                    let _ = std::fs::rename(d.join(format!("ferrotube.db{ext}")), d.join(format!("streamtube.db{ext}")));
+                }
+            }
+            d
         }
-        d
     })
     .clone()
 }

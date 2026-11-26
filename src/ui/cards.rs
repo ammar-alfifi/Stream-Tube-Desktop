@@ -212,7 +212,7 @@ pub fn video_menu_items(v: &VideoItem) -> Vec<MenuItem> {
     }));
     let id2 = v.id.clone();
     items.push(MenuItem::new("globe", t("Open on YouTube"), move |_, _| {
-        let _ = open::that(format!("https://www.youtube.com/watch?v={id2}"));
+        let _ = crate::platform::open(format!("https://www.youtube.com/watch?v={id2}"));
     }));
     let hid_id = v.id.clone();
     let hid_title = v.title.clone();

@@ -3,7 +3,7 @@ name: Windows build
 on:
   push:
     branches: [main]
-    paths: ["src/**", "Cargo.toml", "Cargo.lock", "build.rs", "assets/**", "installer/**", ".github/workflows/windows.yml"]
+    paths: ["src/**", "crates/**", "Cargo.toml", "Cargo.lock", "build.rs", "assets/**", "installer/**", ".github/workflows/windows.yml"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -46,7 +46,7 @@ jobs:
         run: cargo build --release --locked
 
       - name: Test
-        run: cargo test --release --locked
+        run: cargo test --workspace --release --locked
 
       - name: Get libmpv
         if: inputs.package

@@ -1,18 +1,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-mod api;
+pub use streamtube_core::{api, feed, i18n, import, locale, perf, recommend, store};
+
 mod assets;
 mod display;
 mod downloads;
-mod feed;
-mod i18n;
 mod idle_inhibit;
-mod import;
 mod links;
-mod locale;
-mod perf;
+mod platform;
 mod player;
-mod recommend;
-mod store;
 mod ui;
 mod updater;
 
@@ -94,7 +89,7 @@ fn main() {
         .run(|cx: &mut App| {
             perf::mark("gpui running");
             gpui_kit::init(cx);
-            i18n::apply_component_locale();
+            gpui_kit::component::set_locale(i18n::language().code());
             perf::mark("gpui_kit init");
             player::preview::init(cx);
             perf::mark("preview init");

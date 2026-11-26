@@ -1,7 +1,7 @@
 //! Download manager (yt-dlp when available, native fallback) and external player launching.
 pub(crate) mod transcript;
 
-use crate::api::streams::{self, hide_window};
+use crate::api::streams::{self, YTDLP_IOS, hide_window, retry_with_ios};
 use crate::i18n::{t as translate, tf};
 use crate::api::types::{CaptionTrack, VideoItem};
 use crate::store;
@@ -326,16 +326,6 @@ fn run_job(job: &Job, track: Option<&CaptionTrack>, cancel: &AtomicBool, progres
     native_download(job, &dir, cancel, progress)
 }
 
-/// yt-dlp extractor arguments for the iOS client, including the formats yt-dlp
-/// would otherwise hold back for lack of a PO token.
-pub const YTDLP_IOS: &str = "youtube:player_client=ios;formats=missing_pot";
-
-/// Whether a failed yt-dlp run is worth retrying through the iOS client.
-pub fn retry_with_ios(err: &str) -> bool {
-    let e = err.to_lowercase();
-    !e.contains("cancelled") && (e.contains("not available") || e.contains("unavailable") || e.contains("requested format") || e.contains("reloaded"))
-}
-
 /// `name`: the file name without extension, when the URL isn't a YouTube page
 /// (yt-dlp would otherwise name the file after the manifest).
 #[allow(clippy::too_many_arguments)]
@@ -582,7 +572,7 @@ fn open_with_default(info: &crate::api::types::StreamInfo, start: Option<u64>) -
     // symlink another user planted
     let path = store::data_dir().join("streamtube-play.m3u");
     std::fs::write(&path, m3u)?;
-    open::that(&path)?;
+    crate::platform::open(&path)?;
     Ok(translate("your default player").into())
 }
 
@@ -666,7 +656,7 @@ pub fn open_file(path: &str, cx: &mut App) {
                 return;
             }
         }
-        let _ = open::that(&path);
+        let _ = crate::platform::open(&path);
     });
 }
 
@@ -1009,7 +999,7 @@ mod kids_download_tests {
         let url = "https://www.youtube.com/watch?v=e_04ZrNroTo";
         let fmt = "bv*[height<=360]+ba/b[height<=360]/b";
         // yt-dlp alone fails, with an error that leads to the retries
-        if let Err(e) = super::ytdlp_run(&bin, &dir, url, fmt, &s, &["--extractor-args", super::YTDLP_IOS], None, &cancel, &|_, _| {}) {
+        if let Err(e) = super::ytdlp_run(&bin, &dir, url, fmt, &s, &["--extractor-args", crate::api::streams::YTDLP_IOS], None, &cancel, &|_, _| {}) {
             println!("yt-dlp iOS: {e}");
         }
         let manifest = crate::api::streams::ios_hls_manifest("e_04ZrNroTo").unwrap();

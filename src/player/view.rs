@@ -580,7 +580,7 @@ impl Render for PlayerView {
                                         .child(translate("Open on YouTube"))
                                         .on_click(move |_, _, cx| {
                                             cx.stop_propagation();
-                                            let _ = open::that_detached(&url);
+                                            let _ = crate::platform::open_detached(&url);
                                         }),
                                 )
                             }),
@@ -825,12 +825,12 @@ impl PlayerView {
                                 if let Some(route) = crate::ui::app::route_from_link(url) {
                                     crate::ui::app::navigate(route, window, cx);
                                 } else {
-                                    let _ = open::that_detached(url);
+                                    let _ = crate::platform::open_detached(url);
                                 }
                             }
                             Action::Web(url) => {
                                 this.player.update(cx, |p, cx| p.set_paused(true, cx));
-                                let _ = open::that_detached(url);
+                                let _ = crate::platform::open_detached(url);
                             }
                         }
                         this.poke(cx);

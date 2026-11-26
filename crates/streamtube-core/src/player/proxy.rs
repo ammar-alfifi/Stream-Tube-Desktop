@@ -129,7 +129,7 @@ pub fn local_hls(url: &str, max_height: u32, audio: Option<&str>) -> String {
     playback_hls(url, max_height, audio, false)
 }
 
-pub(super) fn playback_hls(url: &str, max_height: u32, audio: Option<&str>, prefer_avc: bool) -> String {
+pub fn playback_hls(url: &str, max_height: u32, audio: Option<&str>, prefer_avc: bool) -> String {
     let Some(p) = proxy() else { return url.to_string() };
     let id = register(p, url, None, HLS);
     let mut url = format!("{}/h/{id}.m3u8?max={max_height}", p.base());

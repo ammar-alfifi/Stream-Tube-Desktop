@@ -60,7 +60,7 @@ pub fn signed_in() -> bool {
     state().lock().as_ref().map(|s| !s.refresh_token.is_empty()).unwrap_or(false)
 }
 
-pub(crate) fn session_identity() -> Option<Arc<()>> {
+pub fn session_identity() -> Option<Arc<()>> {
     state()
         .lock()
         .as_ref()

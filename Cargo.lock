@@ -6081,7 +6081,6 @@ name = "streamtube"
 version = "0.7.5-alpha"
 dependencies = [
  "anyhow",
- "base64 0.22.1",
  "chrono",
  "dirs 6.0.0",
  "embed-resource",
@@ -6094,17 +6093,33 @@ dependencies = [
  "parking_lot",
  "rand 0.9.5",
  "raw-window-handle",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "smallvec",
+ "streamtube-core",
+ "wayland-client",
+ "wayland-protocols",
+ "windows 0.62.2",
+]
+
+[[package]]
+name = "streamtube-core"
+version = "0.7.5-alpha"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "dirs 6.0.0",
+ "parking_lot",
+ "rand 0.9.5",
  "rusqlite",
  "serde",
  "serde_json",
  "sha1",
  "sha2 0.11.1",
- "smallvec",
  "ureq",
  "url",
- "wayland-client",
- "wayland-protocols",
- "windows 0.62.2",
 ]
 
 [[package]]

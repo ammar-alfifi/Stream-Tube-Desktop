@@ -192,7 +192,7 @@ impl SettingsPage {
 /// Applies a changed setting to the running app (theme, palette, current playback).
 fn after_change(id: &str, window: &mut Window, cx: &mut App) {
     if id == "app-language" {
-        crate::i18n::apply_component_locale();
+        gpui_kit::component::set_locale(crate::i18n::language().code());
         window.set_window_title(&format!("{} - Stream Tube", t("Settings")));
     } else {
         apply_theme(Some(window), cx);
@@ -1207,7 +1207,7 @@ impl SettingsPage {
             })
             .child(row("Check for updates at startup", "", switch("upd-auto", s.check_updates, |s, v| s.check_updates = v, cx), cx))
             .child(row("Releases", "Changelog and downloads on GitHub", pill("upd-page", Some("external-link"), "Open", cx).on_click(|_, _, _| {
-                let _ = open::that(crate::updater::RELEASES_PAGE);
+                let _ = crate::platform::open(crate::updater::RELEASES_PAGE);
             }), cx))
 
     }

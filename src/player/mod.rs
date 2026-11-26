@@ -1,7 +1,6 @@
-pub mod aspect;
+pub use streamtube_core::player::{aspect, proxy, shorts_preload};
+
 pub mod controller;
 pub mod mpv;
-pub mod view;
 pub mod preview;
-pub mod proxy;
-pub mod shorts_preload;
+pub mod view;

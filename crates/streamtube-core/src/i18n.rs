@@ -125,10 +125,6 @@ pub fn t(source: &str) -> &str {
     language().translate(source)
 }
 
-pub fn apply_component_locale() {
-    gpui_kit::component::set_locale(language().code());
-}
-
 pub fn format(source: &str, args: &[&dyn Display]) -> String {
     format_template(t(source), args)
 }
@@ -159,13 +155,14 @@ fn format_template(template: &str, args: &[&dyn Display]) -> String {
 }
 
 // Catalogs can reorder arguments. Apply Rust's numeric formats at the call site.
+#[macro_export]
 macro_rules! tf {
     ($source:expr $(, $arg:expr)* $(,)?) => {
         $crate::i18n::format($source, &[$(&($arg) as &dyn std::fmt::Display),*])
     };
 }
 
-pub(crate) use tf;
+pub use tf;
 
 #[cfg(test)]
 mod tests {
