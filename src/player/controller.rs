@@ -1,9 +1,11 @@
 //! Player controller: owns the mpv instance, stream selection, SponsorBlock, queue and progress.
+//! Platform-independent playback decisions live in `streamtube-core`'s `playback` module.
 use super::mpv::{Mpv, MpvEvent, PropValue};
-use crate::i18n::{t as translate, tf};
 use crate::api::services::{self, Segment};
 use crate::api::streams;
 use crate::api::types::*;
+use crate::i18n::{t as translate, tf};
+use crate::playback;
 use crate::store;
 use crate::ui::{blocking, toast};
 use gpui_kit::*;
@@ -38,7 +40,6 @@ pub enum KeyboardFeedback {
     Seek(f64),
 }
 
-const SEEK_DISK_CACHE_LIMIT: u64 = 128 * 1024 * 1024;
 const BACK_CACHE_SIZE: &str = "12MiB";
 
 pub struct Player {
@@ -121,18 +122,8 @@ pub fn init(cx: &mut App) {
 
 pub fn enqueue(v: VideoItem, cx: &mut App) {
     player(cx).update(cx, |p, cx| {
-        if p.video.is_none() {
-            p.queue.push(v.clone());
-            p.queue_pos = Some(p.queue.len() - 1);
+        if playback::enqueue(v.clone(), p.video.as_ref(), &mut p.queue, &mut p.queue_pos) {
             p.play(v, None, cx);
-        } else {
-            if p.queue.is_empty() {
-                if let Some(cur) = p.video.clone() {
-                    p.queue.push(cur);
-                    p.queue_pos = Some(0);
-                }
-            }
-            p.queue.push(v);
         }
         cx.notify();
     });
@@ -485,12 +476,7 @@ impl Player {
                     ("demuxer-cache-state", PropValue::Cache { ranges, disk_bytes }) if !self.loading && self.streams.is_some() => {
                         self.seek_disk_bytes = self.seek_disk_bytes.max(disk_bytes);
                         if let Some((from, end)) = self.seek_cache_target {
-                            // Follow only the range that actually covers our last seek or
-                            // refill point. A separate range ahead may itself be shrinking.
-                            let filled = ranges.iter().filter(|&&(a, b)| a <= from && from <= b)
-                                .map(|&(_, b)| b).fold(from, f64::max);
-                            let target = (filled < end && self.seek_disk_bytes < SEEK_DISK_CACHE_LIMIT)
-                                .then_some((filled, end));
+                            let target = playback::refill_progress(from, end, &ranges, self.seek_disk_bytes);
                             self.set_seek_cache_target(target);
                         }
                         self.cache_ranges = Some(ranges);
@@ -521,7 +507,7 @@ impl Player {
         }
         let live = video.is_live || self.streams.as_ref().is_some_and(|info| info.is_live);
         let position = self.mpv.as_ref().and_then(|mpv| mpv.get_f64("time-pos")).unwrap_or(self.time);
-        if !live && premature_eof(position, self.duration) {
+        if !live && playback::premature_eof(position, self.duration) {
             self.time = position;
             self.error = Some("Playback stopped before the end of the video.".into());
             self.save_progress(true);
@@ -535,11 +521,9 @@ impl Player {
             self.set_paused(false, cx);
             return;
         }
-        if let Some(pos) = self.queue_pos {
-            if pos + 1 < self.queue.len() {
-                self.play_queue_index(pos + 1, cx);
-                return;
-            }
+        if let Some(next) = playback::next_index(&self.queue, self.queue_pos) {
+            self.play_queue_index(next, cx);
+            return;
         }
         cx.emit(PlayerEvent::Ended);
         self.sync_idle(cx);
@@ -614,75 +598,53 @@ impl Player {
         if !s.sponsorblock || self.segments.is_empty() {
             return;
         }
-        let mut prompt = None;
-        let mut in_mute = false;
-        for seg in self.segments.clone() {
-            let action = s.sb_actions.get(&seg.category).map(String::as_str).unwrap_or("off");
-            if action == "off" || seg.action == "poi" || seg.action == "full" {
-                continue;
-            }
-            let inside = t >= seg.start && t < seg.end - 0.3;
-            if !inside {
-                continue;
-            }
-            if seg.action == "mute" {
-                in_mute = true;
-                continue;
-            }
-            if seg.end - seg.start < s.sb_min_duration {
-                continue;
-            }
-            match action {
-                "skip" if !self.skipped.contains(&seg.uuid) => {
-                    self.skipped.insert(seg.uuid.clone());
-                    let back_to = seg.start;
-                    self.seek_to(seg.end);
-                    let server = s.sponsorblock_server.clone();
-                    let uuid = seg.uuid.clone();
-                    std::thread::spawn(move || services::sponsor_viewed(&server, &uuid));
-                    if s.sb_notify {
-                        let weak = cx.entity().downgrade();
-                        let mut actions: Vec<(SharedString, Arc<dyn Fn(&mut Window, &mut App)>)> = vec![(
-                            translate("Unskip").into(),
-                            Arc::new(move |_, cx: &mut App| {
-                                if let Some(p) = weak.upgrade() {
-                                    p.update(cx, |p, _| p.seek_to(back_to));
-                                }
-                            }),
-                        )];
-                        if !s.sb_user_id.is_empty() {
-                            for (label, up) in [("Upvote", true), ("Downvote", false)] {
-                                let (server, uuid, user) = (s.sponsorblock_server.clone(), seg.uuid.clone(), s.sb_user_id.clone());
-                                actions.push((
-                                    translate(label).into(),
-                                    Arc::new(move |_, cx: &mut App| {
-                                        let (server, uuid, user) = (server.clone(), uuid.clone(), user.clone());
-                                        cx.spawn(async move |cx| {
-                                            let res = crate::ui::blocking(move || services::sponsor_vote(&server, &uuid, &user, up)).await;
-                                            let _ = cx.update(|cx| match res {
-                                                Ok(()) => toast(cx, translate("Thanks for voting")),
-                                                Err(e) => toast(cx, tf!("Vote failed: {0}", e)),
-                                            });
-                                        })
-                                        .detach();
-                                    }),
-                                ));
-                            }
+        let decision = playback::sb_decision(&s, &self.segments, t, &self.skipped);
+        for seg in decision.skips {
+            self.skipped.insert(seg.uuid.clone());
+            let back_to = seg.start;
+            self.seek_to(seg.end);
+            let server = s.sponsorblock_server.clone();
+            let uuid = seg.uuid.clone();
+            std::thread::spawn(move || services::sponsor_viewed(&server, &uuid));
+            if s.sb_notify {
+                let weak = cx.entity().downgrade();
+                let mut actions: Vec<(SharedString, Arc<dyn Fn(&mut Window, &mut App)>)> = vec![(
+                    translate("Unskip").into(),
+                    Arc::new(move |_, cx: &mut App| {
+                        if let Some(p) = weak.upgrade() {
+                            p.update(cx, |p, _| p.seek_to(back_to));
                         }
-                        crate::ui::toast_with_actions(cx, tf!("Skipped {0}", translate(services::sponsor_category_name(&seg.category))), actions);
+                    }),
+                )];
+                if !s.sb_user_id.is_empty() {
+                    for (label, up) in [("Upvote", true), ("Downvote", false)] {
+                        let (server, uuid, user) = (s.sponsorblock_server.clone(), seg.uuid.clone(), s.sb_user_id.clone());
+                        actions.push((
+                            translate(label).into(),
+                            Arc::new(move |_, cx: &mut App| {
+                                let (server, uuid, user) = (server.clone(), uuid.clone(), user.clone());
+                                cx.spawn(async move |cx| {
+                                    let res = crate::ui::blocking(move || services::sponsor_vote(&server, &uuid, &user, up)).await;
+                                    let _ = cx.update(|cx| match res {
+                                        Ok(()) => toast(cx, translate("Thanks for voting")),
+                                        Err(e) => toast(cx, tf!("Vote failed: {0}", e)),
+                                    });
+                                })
+                                .detach();
+                            }),
+                        ));
                     }
                 }
-                "ask" => prompt = Some(seg.clone()),
-                _ => {}
+                crate::ui::toast_with_actions(cx, tf!("Skipped {0}", translate(services::sponsor_category_name(&seg.category))), actions);
             }
         }
-        if in_mute != self.muted_by_sb {
-            self.muted_by_sb = in_mute;
+        if decision.mute != self.muted_by_sb {
+            self.muted_by_sb = decision.mute;
             if let Some(m) = &self.mpv {
-                m.set_flag("mute", in_mute || self.muted);
+                m.set_flag("mute", decision.mute || self.muted);
             }
         }
-        self.sb_prompt = prompt;
+        self.sb_prompt = decision.prompt;
     }
 
     pub fn save_progress(&mut self, force: bool) {
@@ -760,9 +722,7 @@ impl Player {
         let resume = if start.is_some() {
             start
         } else if s.resume_playback {
-            store::progress_map().get(&id).and_then(|(p, d)| {
-                (*p > 10.0 && (*d <= 0.0 || *p < d - 15.0)).then_some(*p)
-            })
+            playback::resume_position(store::progress_map().get(&id))
         } else {
             None
         };
@@ -1130,20 +1090,7 @@ impl Player {
 
     /// Where "Jump ahead" goes: the next part of the video most viewers skip to.
     pub fn jump_ahead_target(&self) -> Option<f64> {
-        let from = self.time + 5.0;
-        let later: Vec<&(f64, f64, f32)> = self.heatmap.iter().filter(|m| m.0 > from).collect();
-        let max = later.iter().map(|m| m.2).fold(0.0f32, f32::max);
-        if max <= 0.0 {
-            return None;
-        }
-        // first local peak that is close to the strongest one ahead
-        for (i, m) in later.iter().enumerate() {
-            let next = later.get(i + 1).map(|n| n.2).unwrap_or(0.0);
-            if m.2 >= max * 0.8 && m.2 >= next {
-                return Some(m.0);
-            }
-        }
-        None
+        playback::jump_ahead_target(&self.heatmap, self.time)
     }
 
     pub fn set_quality(&mut self, q: u32, cx: &mut Context<Self>) {
@@ -1296,24 +1243,27 @@ impl Player {
     pub fn seek_interactive(&mut self, t: f64) {
         // Landing on a keyframe avoids fetching and decoding an extra GOP
         // before showing the picture after a large jump through an HLS VOD.
-        let buffered = t >= self.time && t <= self.cache_time;
-        let remote_jump = (t - self.time).abs() >= 8.0 && !buffered
-            && self.streams.as_ref().is_some_and(|s| s.hls_only && !s.is_live);
-        self.seek(t, if remote_jump { "absolute+keyframes" } else { "absolute+exact" });
+        let hls_vod = self.streams.as_ref().is_some_and(|s| s.hls_only && !s.is_live);
+        let mode = playback::seek_mode(t, self.time, self.cache_time, hls_vod);
+        self.seek(t, mode);
     }
 
     fn seek(&mut self, t: f64, mode: &str) {
         self.playback_timing = std::env::var_os("STREAMTUBE_PLAYBACK_TIMING").map(|_| ("seek", Instant::now()));
         self.frame_progress = None;
         self.preloaded_until = 0.0;
-        let t = clamp_seek(t, self.duration);
-        if (t < self.time || self.seek_cache_target.is_some()) && !self.loading
-            && self.seek_disk_bytes < SEEK_DISK_CACHE_LIMIT && self.streams.as_ref().is_some_and(|s| !s.is_live)
-        {
+        let t = playback::clamp_seek(t, self.duration);
+        if playback::keeps_back_cache(
+            t,
+            self.time,
+            self.seek_cache_target.is_some(),
+            self.loading,
+            self.streams.as_ref().is_some_and(|s| !s.is_live),
+            self.seek_disk_bytes,
+        ) {
             let ranges = self.cache_ranges.as_deref().unwrap_or_default();
-            let end = ranges.iter().filter(|&&(start, _)| start > t).map(|&(_, end)| end)
-                .chain(self.seek_cache_target.map(|(_, end)| end)).fold(t, f64::max);
-            self.set_seek_cache_target((t < end).then_some((t, end)));
+            let target = playback::seek_refill_target(t, ranges, self.seek_cache_target);
+            self.set_seek_cache_target(target);
         }
         self.time = t;
         if let Some(m) = &self.mpv {
@@ -1479,7 +1429,7 @@ impl Player {
     /// and Ctrl+Left do on YouTube. False when there is no chapter that way.
     pub fn seek_chapter(&mut self, dir: i32) -> bool {
         let starts: Vec<f64> = self.chapters.iter().map(|c| c.start).collect();
-        match chapter_target(&starts, self.time, dir) {
+        match playback::chapter_target(&starts, self.time, dir) {
             Some(t) => {
                 self.seek_to(t);
                 true
@@ -1906,26 +1856,6 @@ fn mpv_media_title_option(title: &str) -> String {
     format!("force-media-title=%{}%{title}", title.len())
 }
 
-fn premature_eof(position: f64, duration: f64) -> bool {
-    // libmpv can report EOF for truncated streams. Allow for the last frame's timestamp.
-    position.is_finite()
-        && position >= 0.0
-        && duration.is_finite()
-        && duration > 0.0
-        && duration - position > (duration * 0.02).clamp(1.0, 2.0)
-}
-
-#[cfg(test)]
-mod playback_end_tests {
-    #[::core::prelude::v1::test]
-    fn distinguishes_truncated_playback_from_a_normal_end() {
-        assert!(super::premature_eof(3.76, 12.0));
-        assert!(!super::premature_eof(11.96, 12.0));
-        assert!(!super::premature_eof(0.0, 0.0));
-        assert!(!super::premature_eof(0.0, 0.3));
-    }
-}
-
 #[cfg(test)]
 mod media_title_tests {
     #[::core::prelude::v1::test]
@@ -1987,56 +1917,5 @@ mod caption_tests {
             ..Default::default()
         };
         assert_eq!(super::pick_caption(&en_info, "original"), Some(0));
-    }
-}
-
-fn clamp_seek(t: f64, duration: f64) -> f64 {
-    if duration > 0.0 {
-        t.clamp(0.0, (duration - 0.1).max(0.0))
-    } else {
-        t.max(0.0)
-    }
-}
-
-/// Where a chapter jump from `now` lands: the next chapter's start (`dir` > 0), or
-/// the previous chapter's start (in the first chapter, its own start).
-fn chapter_target(starts: &[f64], now: f64, dir: i32) -> Option<f64> {
-    let now = now + 0.01;
-    if dir > 0 {
-        return starts.iter().copied().find(|&s| s > now);
-    }
-    let cur = starts.iter().rposition(|&s| s <= now)?;
-    Some(starts[cur.saturating_sub(1)])
-}
-
-#[cfg(test)]
-mod chapter_tests {
-    use super::chapter_target;
-
-    #[::core::prelude::v1::test]
-    fn jumps() {
-        let c = [0.0, 60.0, 120.0];
-        assert_eq!(chapter_target(&c, 30.0, 1), Some(60.0));
-        assert_eq!(chapter_target(&c, 60.0, 1), Some(120.0));
-        assert_eq!(chapter_target(&c, 130.0, 1), None);
-        assert_eq!(chapter_target(&c, 90.0, -1), Some(0.0));
-        assert_eq!(chapter_target(&c, 60.0, -1), Some(0.0));
-        assert_eq!(chapter_target(&c, 10.0, -1), Some(0.0));
-        assert_eq!(chapter_target(&[], 10.0, 1), None);
-    }
-}
-
-#[cfg(test)]
-mod seek_tests {
-    use super::clamp_seek;
-
-    #[::core::prelude::v1::test]
-    fn stays_inside_the_video_and_does_not_panic_when_it_is_very_short() {
-        assert_eq!(clamp_seek(30.0, 120.0), 30.0);
-        assert_eq!(clamp_seek(120.0, 120.0), 119.9);
-        assert_eq!(clamp_seek(-1.0, 120.0), 0.0);
-        assert_eq!(clamp_seek(5.0, 0.0), 5.0);
-        assert_eq!(clamp_seek(0.05, 0.05), 0.0);
-        assert_eq!(clamp_seek(0.1, 0.1), 0.0);
     }
 }
