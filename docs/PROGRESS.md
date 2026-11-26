@@ -9,5 +9,6 @@ Last updated: 2026-11-26
 | A2 EJS solver core | 2 | core proven; extraction integration pending | `docs/evidence/A2/` (real sig+n solved; signed URL HTTP 206; Android check passed) | connect solver to web player extraction after A1 |
 | B1 gpui-mobile alignment | 0 | in progress | - | compare exact gpui-pre/wgpu graph and shell APIs |
 | C1 controller state split | 0 | pending | - | identify GPUI-free state/queue/resume/SponsorBlock logic |
+| C2 libmpv binaries | 1 | binaries proven; CI LGPL build pending | `docs/evidence/C2/` (29 hashes OK, 16KB, emulator mpv_initialize=0) | package jniLibs and decide LGPL build for public release |
 | SponsorBlock live API probe | 1 | done | `docs/evidence/sponsorblock-live.log` (HTTP path reachable; sample video had zero segments) | prove an actual skip on a video with segments in the player |
 | Environment/fork/emulator/signing | 1 | done | `docs/evidence/environment/setup.md`; fork PR #1; emulator-5554 booted | keep emulator warm for APK verification |

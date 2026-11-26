@@ -1,0 +1,64 @@
+# C2: libmpv.so deep verification — arm64-v8a (from mpv-android release 2026-09-17)
+
+## SONAME
+  0x000000000000000e (SONAME)       Library soname: [libmpv.so]
+
+## NEEDED
+  0x0000000000000001 (NEEDED)       Shared library: [libm.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libz.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libdl.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libavcodec.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libavfilter.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libavformat.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libavutil.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libc++_shared.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libswresample.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libswscale.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libandroid.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libavdevice.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libOpenSLES.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libEGL.so]
+  0x0000000000000001 (NEEDED)       Shared library: [libc.so]
+
+## LOAD segments
+  LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x76ab30 0x76ab30 R E 0x4000
+  LOAD           0x76ab30 0x000000000076eb30 0x000000000076eb30 0x06e7d0 0x06f4d0 RW  0x4000
+  LOAD           0x7d9300 0x00000000007e1300 0x00000000007e1300 0x0060dc 0x00b070 RW  0x4000
+
+## ELF header class/machine
+  Class:                             ELF64
+  Type:                              DYN (Shared object file)
+  Machine:                           AArch64
+
+## Android ELF note (API level / NDK)
+  Android              0x00000084	NT_ANDROID_TYPE_IDENT
+   description data: 17 00 00 00 72 33 30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 31 36 32 34 38 33 37 30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+## Key exported symbols (client + render API)
+   683: 0000000000364130  1300 FUNC    GLOBAL DEFAULT    12 mpv_wait_event
+   729: 0000000000364e70    40 FUNC    GLOBAL DEFAULT    12 mpv_set_option_string
+   815: 00000000003d57a0   824 FUNC    GLOBAL DEFAULT    12 mpv_render_context_render
+   853: 0000000000364cac   140 FUNC    GLOBAL DEFAULT    12 mpv_wakeup
+  1271: 00000000003650ec   100 FUNC    GLOBAL DEFAULT    12 mpv_command_string
+  1394: 00000000003d517c   936 FUNC    GLOBAL DEFAULT    12 mpv_render_context_create
+  1565: 0000000000367350     4 FUNC    GLOBAL DEFAULT    12 mpv_free
+  1716: 0000000000363c14     8 FUNC    GLOBAL DEFAULT    12 mpv_terminate_destroy
+  2085: 00000000003668d4   112 FUNC    GLOBAL DEFAULT    12 mpv_load_config_file
+  2147: 0000000000363fb4   160 FUNC    GLOBAL DEFAULT    12 mpv_create
+  2231: 0000000000366ee8    12 FUNC    GLOBAL DEFAULT    12 mpv_client_api_version
+  2686: 0000000000365ebc   544 FUNC    GLOBAL DEFAULT    12 mpv_observe_property
+  2690: 0000000000364e98    48 FUNC    GLOBAL DEFAULT    12 mpv_command
+  2810: 0000000000365858   172 FUNC    GLOBAL DEFAULT    12 mpv_get_property
+  2936: 00000000003d5564   384 FUNC    GLOBAL DEFAULT    12 mpv_render_context_free
+  3236: 000000000036538c   268 FUNC    GLOBAL DEFAULT    12 mpv_set_property
+  3886: 00000000003646ac    88 FUNC    GLOBAL DEFAULT    12 mpv_initialize
+
+## mpv_* exported symbol count
+54
+
+## embedded version strings
+mpv v0.41.0-1049-g0b7ed670f
+## hwdec mediacodec present
+mediacodec
+## libplacebo statically linked (path string leak)
+/var/tmp/mpv-android/buildscripts/prefix/arm64/usr/local/include/libplacebo/utils/libav_internal.h
