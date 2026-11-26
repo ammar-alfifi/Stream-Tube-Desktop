@@ -1,0 +1,20 @@
+[
+  {
+    "videoID": "W9Ikfr0TKCo",
+    "segments": [
+      {
+        "category": "sponsor",
+        "actionType": "skip",
+        "segment": [
+          82.143,
+          98.102
+        ],
+        "UUID": "88a50d695005122ce6cb9a76c29115baf986a058177c4551ff7830e689aaf2c37",
+        "videoDuration": 2316.981,
+        "locked": 0,
+        "votes": 0,
+        "description": ""
+      }
+    ]
+  }
+]
