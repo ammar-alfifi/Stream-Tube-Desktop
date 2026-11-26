@@ -1,0 +1,30 @@
+Stream Tube Android - player redesign
+Date: 2026-11-26
+Device: emulator-5554, API 35, x86_64, 720x1600
+Build: debug APK from 95fe077 + player redesign working tree
+
+Design:
+  - Compact app bar with back, two-line title and overflow.
+  - Edge-to-edge 16:9 video stage.
+  - One control deck: time row, 6dp progress bar, centered -10/play/+10.
+  - Transport controls use bundled Undo2/Redo2 icons with a 10 label.
+  - Quality fallback is a slim inline notice with Details, not a card.
+  - Channel row with avatar, name and Subscribe; views/date below it.
+  - Like pill plus a secondary 48dp copy-link button.
+  - Collapsible description and SponsorBlock segment count.
+  - Overflow panel: Restart and Copy link, both wired to real actions.
+  - Loading uses LoaderCircle; error card has a real Retry action.
+  - 24dp top inset and 24dp bottom scroll inset.
+
+Verified:
+  - cargo ndk check for arm64-v8a and x86_64: OK.
+  - Debug APK built and installed.
+  - Video played (mpv hwdec=mediacodec, audio audiotrack).
+  - Pause toggled true and the icon changed to Play; resume toggled false.
+  - Overflow opened; Restart and Copy link rows rendered with icons.
+  - Crash buffer empty.
+  - PSS while playing: 189746 KB.
+
+Not captured:
+  - Error state with no playable source (code path reviewed only; the test
+    video fell back to a lower-quality muxed stream instead).

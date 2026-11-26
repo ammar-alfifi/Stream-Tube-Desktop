@@ -35,7 +35,16 @@ gpui_kit::assets::icon_assets!(
         Pause,
         Close,
         ThumbsUp,
-        Check
+        Check,
+        Users,
+        Clock,
+        Menu,
+        Undo2,
+        Redo2,
+        Copy,
+        RefreshCw,
+        LoaderCircle,
+        EllipsisVertical
     ]
 );
 
@@ -51,6 +60,7 @@ use gpui_kit::*;
 use gpui_kit::{ImgResourceLoader, Resource};
 use streamtube_core::api::innertube::{self, SearchFilter};
 use streamtube_core::api::types::{Item, VideoItem};
+use streamtube_core::feed;
 use streamtube_core::i18n;
 use streamtube_core::store;
 
@@ -212,6 +222,8 @@ enum Load<T> {
 enum Mode {
     Home,
     Search(String),
+    Subscriptions,
+    Library,
 }
 
 struct Shell {
@@ -410,6 +422,65 @@ impl Shell {
         cx.notify();
     }
 
+    fn load_subscriptions(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.clear_images(cx, Some(window));
+        self.mode = Mode::Subscriptions;
+        self.items = Load::Loading;
+        self.continuation = None;
+        self.serial += 1;
+        let serial = self.serial;
+        cx.spawn(async move |this, cx| {
+            let res = blocking(move || feed::cached_feed(None).0).await;
+            let _ = this.update(cx, |this, cx| {
+                if this.serial != serial {
+                    return;
+                }
+                this.items = if res.is_empty() {
+                    Load::Error(
+                        "No subscriptions yet. Subscribe to a channel from a video, then retry."
+                            .into(),
+                    )
+                } else {
+                    let items: Vec<Item> = res.into_iter().map(Item::Video).collect();
+                    this.replace_items(Arc::new(items), cx);
+                    cx.notify();
+                    return;
+                };
+                cx.notify();
+            });
+        })
+        .detach();
+        cx.notify();
+    }
+
+    fn load_library(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.clear_images(cx, Some(window));
+        self.mode = Mode::Library;
+        self.items = Load::Loading;
+        self.continuation = None;
+        self.serial += 1;
+        let serial = self.serial;
+        cx.spawn(async move |this, cx| {
+            let res = blocking(|| store::history_list("", MAX_FEED_ITEMS)).await;
+            let _ = this.update(cx, |this, cx| {
+                if this.serial != serial {
+                    return;
+                }
+                this.items = if res.is_empty() {
+                    Load::Error("Watch history is empty.".into())
+                } else {
+                    let items: Vec<Item> = res.into_iter().map(|h| Item::Video(h.video)).collect();
+                    this.replace_items(Arc::new(items), cx);
+                    cx.notify();
+                    return;
+                };
+                cx.notify();
+            });
+        })
+        .detach();
+        cx.notify();
+    }
+
     fn search_for(&mut self, q: &str, window: &mut Window, cx: &mut Context<Self>) {
         self.run_search(q, 0, window, cx);
     }
@@ -492,6 +563,8 @@ impl Shell {
         match self.mode.clone() {
             Mode::Home => self.load_home(window, cx),
             Mode::Search(q) => self.search_for(&q, window, cx),
+            Mode::Subscriptions => self.load_subscriptions(window, cx),
+            Mode::Library => self.load_library(window, cx),
         }
     }
 
@@ -663,13 +736,15 @@ impl Render for Shell {
                             ),
                     ),
             )
-            .child(if searching {
-                search_filter_bar(self.search_kind, cx).into_any_element()
-            } else {
-                category_bar(cx).into_any_element()
+            .when(matches!(self.mode, Mode::Home | Mode::Search(_)), |d| {
+                d.child(if searching {
+                    search_filter_bar(self.search_kind, cx).into_any_element()
+                } else {
+                    category_bar(cx).into_any_element()
+                })
             })
             .child(body)
-            .child(bottom_nav(searching, cx))
+            .child(bottom_nav(&self.mode, cx))
     }
 }
 
@@ -808,6 +883,7 @@ fn loading_state() -> impl IntoElement {
 }
 
 fn error_state(message: &str, cx: &mut Context<Shell>) -> Div {
+    let empty = message == "Watch history is empty." || message.starts_with("No subscriptions yet");
     div()
         .size_full()
         .min_h_0()
@@ -856,7 +932,11 @@ fn error_state(message: &str, cx: &mut Context<Shell>) -> Div {
                                     .font_weight(FontWeight::MEDIUM)
                                     .text_color(rgb(TEXT))
                                     .text_center()
-                                    .child("Something went wrong"),
+                                    .child(if empty {
+                                        "Nothing here yet"
+                                    } else {
+                                        "Something went wrong"
+                                    }),
                             )
                             .child(
                                 div()
@@ -894,107 +974,102 @@ fn error_state(message: &str, cx: &mut Context<Shell>) -> Div {
         )
 }
 
-fn bottom_nav(searching: bool, cx: &mut Context<Shell>) -> Div {
-    let home_active = !searching;
+fn nav_item(
+    id: &'static str,
+    label: &'static str,
+    icon: gpui_kit::assets::IconName,
+    active: bool,
+    action: fn(&mut Shell, &mut Window, &mut Context<Shell>),
+    cx: &mut Context<Shell>,
+) -> Stateful<Div> {
     div()
-        .h(px(64.))
+        .id(id)
+        .role(gpui_kit::Role::Button)
+        .aria_label(label)
+        .tab_index(0)
+        .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
+        .flex_1()
+        .h_full()
+        .flex()
+        .flex_col()
+        .items_center()
+        .justify_center()
+        .gap_1()
+        .cursor_pointer()
+        .on_click(cx.listener(move |this, _, window, cx| action(this, window, cx)))
+        .child(
+            div()
+                .h(px(32.))
+                .px_4()
+                .flex()
+                .items_center()
+                .justify_center()
+                .rounded_full()
+                .bg(if active {
+                    rgb(PRIMARY_CONTAINER)
+                } else {
+                    rgb(SURFACE)
+                })
+                .child(Icon::new(icon).size(px(22.)).text_color(if active {
+                    rgb(ON_PRIMARY_CONTAINER)
+                } else {
+                    rgb(TEXT2)
+                })),
+        )
+        .child(
+            div()
+                .text_size(px(11.))
+                .font_weight(if active {
+                    FontWeight::MEDIUM
+                } else {
+                    FontWeight::NORMAL
+                })
+                .text_color(if active { rgb(TEXT) } else { rgb(TEXT2) })
+                .child(label),
+        )
+}
+
+fn bottom_nav(mode: &Mode, cx: &mut Context<Shell>) -> Div {
+    div()
+        .h(px(88.))
+        .pb(px(24.))
         .flex_none()
         .flex()
-        .justify_center()
-        .gap_4()
         .border_t_1()
         .border_color(rgb(SURFACE_VARIANT))
         .bg(rgb(SURFACE))
-        .child(
-            div()
-                .id("nav-home")
-                .role(gpui_kit::Role::Button)
-                .aria_label("Home")
-                .tab_index(0)
-                .focus_visible(|style| style.border_1().border_color(rgb(TEXT)))
-                .flex()
-                .items_center()
-                .justify_center()
-                .cursor_pointer()
-                .on_click(cx.listener(|this, _, window, cx| this.load_home(window, cx)))
-                .child(
-                    div()
-                        .h(px(40.))
-                        .px_5()
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .gap_1()
-                        .rounded_full()
-                        .bg(if home_active {
-                            rgb(PRIMARY_CONTAINER)
-                        } else {
-                            rgb(SURFACE)
-                        })
-                        .text_color(if home_active {
-                            rgb(ON_PRIMARY_CONTAINER)
-                        } else {
-                            rgb(TEXT2)
-                        })
-                        .text_sm()
-                        .font_weight(FontWeight::MEDIUM)
-                        .child(
-                            Icon::new(gpui_kit::assets::IconName::House)
-                                .size(px(22.))
-                                .text_color(if home_active {
-                                    rgb(ON_PRIMARY_CONTAINER)
-                                } else {
-                                    rgb(TEXT2)
-                                }),
-                        )
-                        .child("Home"),
-                ),
-        )
-        .child(
-            div()
-                .id("nav-search")
-                .role(gpui_kit::Role::Button)
-                .aria_label("Search")
-                .tab_index(0)
-                .focus_visible(|style| style.border_1().border_color(rgb(TEXT)))
-                .flex()
-                .items_center()
-                .justify_center()
-                .cursor_pointer()
-                .on_click(cx.listener(|this, _, window, cx| this.focus_search(window, cx)))
-                .child(
-                    div()
-                        .h(px(40.))
-                        .px_5()
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .gap_1()
-                        .rounded_full()
-                        .bg(if searching {
-                            rgb(PRIMARY_CONTAINER)
-                        } else {
-                            rgb(SURFACE)
-                        })
-                        .text_color(if searching {
-                            rgb(ON_PRIMARY_CONTAINER)
-                        } else {
-                            rgb(TEXT2)
-                        })
-                        .text_sm()
-                        .font_weight(FontWeight::MEDIUM)
-                        .child(
-                            Icon::new(gpui_kit::assets::IconName::Search)
-                                .size(px(22.))
-                                .text_color(if searching {
-                                    rgb(ON_PRIMARY_CONTAINER)
-                                } else {
-                                    rgb(TEXT2)
-                                }),
-                        )
-                        .child("Search"),
-                ),
-        )
+        .child(nav_item(
+            "nav-home",
+            "Home",
+            gpui_kit::assets::IconName::House,
+            matches!(mode, Mode::Home),
+            Shell::load_home,
+            cx,
+        ))
+        .child(nav_item(
+            "nav-subs",
+            "Subscriptions",
+            gpui_kit::assets::IconName::Users,
+            matches!(mode, Mode::Subscriptions),
+            Shell::load_subscriptions,
+            cx,
+        ))
+        .child(nav_item(
+            "nav-library",
+            "Library",
+            gpui_kit::assets::IconName::Clock,
+            matches!(mode, Mode::Library),
+            Shell::load_library,
+            cx,
+        ))
+        .child(nav_item(
+            "nav-search",
+            "Search",
+            gpui_kit::assets::IconName::Search,
+            matches!(mode, Mode::Search(_)),
+            Shell::focus_search,
+            cx,
+        ))
 }
 
 // ───────────────────────────── list rows ─────────────────────────────

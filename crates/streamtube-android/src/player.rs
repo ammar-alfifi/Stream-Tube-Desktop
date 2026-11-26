@@ -289,6 +289,13 @@ pub struct Player {
     /// Local account-independent like/subscribe state used by the action pills.
     liked: bool,
     subscribed: bool,
+    /// The compact overflow panel under the control deck.
+    menu_open: bool,
+    copied_link: bool,
+    /// Expanded technical note for an automatic quality fallback.
+    fallback_details: bool,
+    /// Expanded description snippet.
+    desc_open: bool,
 }
 
 impl Player {
@@ -297,6 +304,7 @@ impl Player {
         let view_id = next_view_id();
         *SURFACE_TX.lock().unwrap() = Some((view_id, tx.clone()));
         log::info!("player: opening {} ({})", video.title, video.id);
+        store::history_add(&video);
         let vid = video.id.clone();
         let vid_sb = video.id.clone();
 
@@ -396,6 +404,10 @@ impl Player {
             logged_at: -10.0,
             liked,
             subscribed,
+            menu_open: false,
+            copied_link: false,
+            fallback_details: false,
+            desc_open: false,
         }
     }
 
@@ -664,6 +676,7 @@ impl Player {
                 }
                 if (t - self.logged_at) >= 5.0 {
                     self.logged_at = t;
+                    store::history_progress_queued(&self.video.id, t, self.duration, true);
                     log::info!(
                         "time-pos {:.1}s / {:.1}s (paused={})",
                         t,
@@ -725,6 +738,61 @@ impl Player {
         log::info!("player: subscribe toggled -> {}", self.subscribed);
         cx.notify();
     }
+
+    fn copy_link(&mut self, cx: &mut Context<Self>) {
+        let url = format!("https://youtu.be/{}", self.video.id);
+        match gpui_mobile::packages::clipboard::set_text(&url) {
+            Ok(()) => {
+                self.copied_link = true;
+                cx.notify();
+                cx.spawn(async move |this, cx| {
+                    blocking(|| std::thread::sleep(std::time::Duration::from_millis(1800))).await;
+                    let _ = this.update(cx, |this, cx| {
+                        this.copied_link = false;
+                        cx.notify();
+                    });
+                })
+                .detach();
+            }
+            Err(e) => log::warn!("copy link failed: {e}"),
+        }
+    }
+
+    /// Clears the resolved formats and re-runs source selection. Used by the
+    /// error state when YouTube refused the first URLs.
+    fn retry_playback(&mut self, cx: &mut Context<Self>) {
+        streams::invalidate(&self.video.id);
+        self.streams = None;
+        self.source = None;
+        self.fell_back = None;
+        self.fallback_details = false;
+        self.resolving = false;
+        self.phase = Phase::Loading;
+        self.time = 0.0;
+        let vid = self.video.id.clone();
+        cx.spawn(async move |this, cx| {
+            let res = blocking(move || streams::get_streams(&vid)).await;
+            let _ = this.update(cx, |p, cx| {
+                match res {
+                    Ok(info) => {
+                        p.duration = info.length_secs as f64;
+                        p.streams = Some(Arc::new(info));
+                        if p.mpv.is_some() {
+                            p.load(cx);
+                        } else {
+                            p.try_start(cx);
+                        }
+                    }
+                    Err(e) => {
+                        p.phase = Phase::Error(format!("Stream resolution failed: {e:#}"));
+                    }
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+        cx.notify();
+    }
 }
 
 impl EventEmitter<PlayerEvent> for Player {}
@@ -738,213 +806,153 @@ impl Render for Player {
         } else {
             0.0
         };
-        let status = match &self.phase {
-            Phase::Loading if self.streams.is_none() => "Resolving streams…".to_string(),
-            Phase::Loading => "Opening stream…".to_string(),
-            Phase::Playing if self.buffering => "Buffering…".to_string(),
-            Phase::Playing => "Now playing".to_string(),
-            Phase::Ended => format!("Ended — {}", fmt_time(self.duration)),
-            Phase::Error(e) => format!("Error: {e}"),
+        let error = matches!(&self.phase, Phase::Error(_));
+        let status_line = match &self.phase {
+            Phase::Loading if self.streams.is_none() => "Finding a playable source…",
+            Phase::Loading => "Opening stream…",
+            Phase::Playing if self.buffering => "Buffering…",
+            Phase::Ended => "Finished",
+            Phase::Playing | Phase::Error(_) => "",
         };
+        let meta = [&self.video.views_text, &self.video.published_text]
+            .into_iter()
+            .flatten()
+            .filter(|s| !s.is_empty())
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(" · ");
+        let has_channel = !self.video.channel_name.is_empty();
+        let desc = self
+            .video
+            .description_snippet
+            .clone()
+            .filter(|s| !s.trim().is_empty());
+        let fallback = self.fell_back.clone();
+        let sponsor_count = self.segments.len();
+
         div()
             .flex()
             .flex_col()
             .size_full()
             .bg(rgb(BG))
             .text_color(rgb(TEXT))
-            // video surface (composited above this tree by Android)
-            .child(self.view.render().w_full().h(px(vh)).flex_none())
+            // Compact app bar. Controls cannot sit above the SurfaceView, so
+            // navigation and the title live in their own quiet row.
             .child(
-                div().flex_1().overflow_y_scrollbar().child(
+                div()
+                    .h(px(88.))
+                    .pt(px(24.))
+                    .flex_none()
+                    .px_3()
+                    .flex()
+                    .items_center()
+                    .gap_2()
+                    .bg(rgb(SURFACE))
+                    .border_b_1()
+                    .border_color(rgb(SURFACE_VARIANT))
+                    .child(
+                        div()
+                            .id("back")
+                            .role(gpui_kit::Role::Button)
+                            .aria_label("Back")
+                            .tab_index(0)
+                            .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
+                            .size(px(48.))
+                            .flex_none()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .rounded_full()
+                            .cursor_pointer()
+                            .on_click(cx.listener(|_, _, _, cx| {
+                                log::info!("player: back requested");
+                                cx.emit(PlayerEvent::Back);
+                            }))
+                            .child(
+                                Icon::new(if streamtube_core::i18n::language().is_rtl() {
+                                    gpui_kit::assets::IconName::ArrowRight
+                                } else {
+                                    gpui_kit::assets::IconName::ArrowLeft
+                                })
+                                .size(px(22.))
+                                .text_color(rgb(TEXT)),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .text_size(px(15.))
+                            .font_weight(FontWeight::MEDIUM)
+                            .line_clamp(2)
+                            .child(self.video.title.clone()),
+                    )
+                    .child(
+                        div()
+                            .id("player-menu")
+                            .role(gpui_kit::Role::Button)
+                            .aria_label(if self.menu_open {
+                                "Close player menu"
+                            } else {
+                                "Player menu"
+                            })
+                            .tab_index(0)
+                            .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
+                            .size(px(48.))
+                            .flex_none()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .rounded_full()
+                            .bg(if self.menu_open {
+                                rgb(SURFACE_HIGH)
+                            } else {
+                                rgb(SURFACE)
+                            })
+                            .cursor_pointer()
+                            .on_click(cx.listener(|this, _, _, cx| {
+                                this.menu_open = !this.menu_open;
+                                cx.notify();
+                            }))
+                            .child(
+                                Icon::new(gpui_kit::assets::IconName::EllipsisVertical)
+                                    .size(px(22.))
+                                    .text_color(rgb(TEXT)),
+                            ),
+                    ),
+            )
+            // Edge-to-edge video stage (composited above this tree by Android).
+            .child(
+                self.view
+                    .render()
+                    .w_full()
+                    .h(px(vh))
+                    .flex_none()
+                    .bg(rgb(0x000000)),
+            )
+            .child(
+                div().flex_1().min_h_0().overflow_y_scrollbar().child(
                     div()
                         .flex()
                         .flex_col()
-                        .gap_4()
-                        .p_4()
-                        .child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .gap_3()
-                                .child(
-                                    div()
-                                        .id("back")
-                                        .role(gpui_kit::Role::Button)
-                                        .aria_label("Back")
-                                        .tab_index(0)
-                                        .focus_visible(|style| {
-                                            style.border_1().border_color(rgb(TEXT))
-                                        })
-                                        .size(px(48.))
-                                        .flex_none()
-                                        .flex()
-                                        .items_center()
-                                        .justify_center()
-                                        .rounded_full()
-                                        .bg(rgb(SURFACE_HIGH))
-                                        .text_size(px(20.))
-                                        .cursor_pointer()
-                                        .on_click(cx.listener(|_, _, _, cx| {
-                                            log::info!("player: back requested");
-                                            cx.emit(PlayerEvent::Back);
-                                        }))
-                                        .child(
-                                            Icon::new(if streamtube_core::i18n::language().is_rtl() {
-                                                gpui_kit::assets::IconName::ArrowRight
-                                            } else {
-                                                gpui_kit::assets::IconName::ArrowLeft
-                                            })
-                                                .size(px(22.))
-                                                .text_color(rgb(TEXT)),
-                                        ),
-                                )
-                                .child(
-                                    div()
-                                        .flex_1()
-                                        .min_w_0()
-                                        .flex()
-                                        .flex_col()
-                                        .gap_1()
-                                        .child(
-                                            div()
-                                                .text_size(px(18.))
-                                                .font_weight(FontWeight::BOLD)
-                                                .child(self.video.title.clone()),
-                                        ),
-                                ),
-                        )
-                        .child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .gap_3()
-                                .child(avatar_element(
-                                    self.video.channel_avatar.as_deref(),
-                                    &self.video.channel_name,
-                                    px(40.),
-                                ))
-                                .child(
-                                    div()
-                                        .flex_1()
-                                        .min_w_0()
-                                        .text_size(px(14.))
-                                        .font_weight(FontWeight::MEDIUM)
-                                        .child(self.video.channel_name.clone()),
-                                )
-                                .when(self.video.channel_id.is_some(), |d| {
-                                    d.child(
-                                        div()
-                                            .id("subscribe")
-                                            .role(gpui_kit::Role::Button)
-                                            .aria_label(if self.subscribed {
-                                                "Unsubscribe"
-                                            } else {
-                                                "Subscribe"
-                                            })
-                                            .tab_index(0)
-                                            .focus_visible(|style| {
-                                                style.border_2().border_color(rgb(TEXT))
-                                            })
-                                            .flex_none()
-                                            .h(px(48.))
-                                            .px_4()
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .gap_2()
-                                            .rounded_full()
-                                            .bg(if self.subscribed {
-                                                rgb(SURFACE_HIGH)
-                                            } else {
-                                                rgb(TEXT)
-                                            })
-                                            .text_color(if self.subscribed {
-                                                rgb(TEXT)
-                                            } else {
-                                                rgb(BG)
-                                            })
-                                            .text_size(px(13.))
-                                            .font_weight(FontWeight::MEDIUM)
-                                            .cursor_pointer()
-                                            .on_click(cx.listener(|this, _, _, cx| {
-                                                this.toggle_subscribe(cx)
-                                            }))
-                                            .when(self.subscribed, |d| {
-                                                d.child(
-                                                    Icon::new(
-                                                        gpui_kit::assets::IconName::Check,
-                                                    )
-                                                    .size(px(18.))
-                                                    .text_color(rgb(TEXT)),
-                                                )
-                                            })
-                                            .child(if self.subscribed {
-                                                "Subscribed"
-                                            } else {
-                                                "Subscribe"
-                                            }),
-                                    )
-                                })
-                                .child(
-                                    div()
-                                        .id("like")
-                                        .role(gpui_kit::Role::Button)
-                                        .aria_label(if self.liked { "Unlike" } else { "Like" })
-                                        .tab_index(0)
-                                        .focus_visible(|style| {
-                                            style.border_2().border_color(rgb(TEXT))
-                                        })
-                                        .flex_none()
-                                        .h(px(48.))
-                                        .px_4()
-                                        .flex()
-                                        .items_center()
-                                        .justify_center()
-                                        .gap_2()
-                                        .rounded_full()
-                                        .bg(if self.liked {
-                                            rgb(PRIMARY_CONTAINER)
-                                        } else {
-                                            rgb(SURFACE_HIGH)
-                                        })
-                                        .text_color(if self.liked {
-                                            rgb(ON_PRIMARY_CONTAINER)
-                                        } else {
-                                            rgb(TEXT)
-                                        })
-                                        .text_size(px(13.))
-                                        .font_weight(FontWeight::MEDIUM)
-                                        .cursor_pointer()
-                                        .on_click(cx.listener(|this, _, _, cx| {
-                                            this.toggle_like(cx)
-                                        }))
-                                        .child(
-                                            Icon::new(gpui_kit::assets::IconName::ThumbsUp)
-                                                .size(px(18.))
-                                                .text_color(if self.liked {
-                                                    rgb(ON_PRIMARY_CONTAINER)
-                                                } else {
-                                                    rgb(TEXT)
-                                                }),
-                                        )
-                                        .child(if self.liked { "Liked" } else { "Like" }),
-                                ),
-                        )
+                        .pb(px(24.))
+                        // One control deck, no nested cards.
                         .child(
                             div()
                                 .flex()
                                 .flex_col()
                                 .gap_3()
-                                .p_4()
-                                .rounded_md()
+                                .px_4()
+                                .pt_3()
+                                .pb_2()
                                 .bg(rgb(SURFACE))
-                                .border_1()
-                                .border_color(rgb(SURFACE_VARIANT))
                                 .child(
                                     div()
                                         .flex()
+                                        .items_center()
                                         .justify_between()
                                         .text_size(px(12.))
+                                        .font_weight(FontWeight::MEDIUM)
                                         .text_color(rgb(TEXT2))
                                         .child(fmt_time(self.time))
                                         .child(fmt_time(self.duration)),
@@ -954,47 +962,9 @@ impl Render for Player {
                                     div()
                                         .flex()
                                         .items_center()
-                                        .gap_2()
-                                        .text_size(px(13.))
-                                        .text_color(if matches!(&self.phase, Phase::Error(_)) {
-                                            rgb(ERROR)
-                                        } else {
-                                            rgb(TEXT2)
-                                        })
-                                        .child(div().size(px(8.)).rounded_full().bg(
-                                            if matches!(&self.phase, Phase::Error(_)) {
-                                                rgb(ERROR)
-                                            } else {
-                                                rgb(ACCENT)
-                                            },
-                                        ))
-                                        .child(status),
-                                )
-                                .children(self.fell_back.clone().map(|_| {
-                                    div()
-                                        .p_3()
-                                        .rounded_md()
-                                        .bg(rgb(SURFACE_HIGH))
-                                        .text_size(px(12.))
-                                        .text_color(rgb(TEXT2))
-                                        .child("Playing at lower quality because the higher-quality stream could not be opened.")
-                                })),
-                        )
-                        .child(
-                            div()
-                                .flex()
-                                .flex_col()
-                                .gap_4()
-                                .p_4()
-                                .rounded_md()
-                                .bg(rgb(SURFACE))
-                                .border_1()
-                                .border_color(rgb(SURFACE_VARIANT))
-                                .child(
-                                    div()
-                                        .flex()
-                                        .items_center()
-                                        .justify_between()
+                                        .justify_center()
+                                        .gap_8()
+                                        .py_1()
                                         .child(
                                             div()
                                                 .id("seek-back")
@@ -1006,50 +976,62 @@ impl Render for Player {
                                                 })
                                                 .size(px(56.))
                                                 .flex()
+                                                .flex_col()
                                                 .items_center()
                                                 .justify_center()
                                                 .rounded_full()
                                                 .bg(rgb(SURFACE_HIGH))
-                                                .text_sm()
                                                 .cursor_pointer()
                                                 .on_click(cx.listener(|this, _, _, cx| {
                                                     this.seek_by(-10.0, cx)
                                                 }))
-                                                .child("−10s"),
+                                                .child(
+                                                    Icon::new(gpui_kit::assets::IconName::Undo2)
+                                                        .size(px(22.))
+                                                        .text_color(rgb(TEXT)),
+                                                )
+                                                .child(
+                                                    div()
+                                                        .text_size(px(9.))
+                                                        .text_color(rgb(TEXT2))
+                                                        .child("10"),
+                                                ),
                                         )
                                         .child(
                                             div()
                                                 .id("play-pause")
                                                 .role(gpui_kit::Role::Button)
-                                                .aria_label(if matches!(&self.phase, Phase::Loading) {
-                                                    "Loading"
-                                                } else if self.paused {
-                                                    "Play"
-                                                } else {
-                                                    "Pause"
-                                                })
+                                                .aria_label(
+                                                    if matches!(&self.phase, Phase::Loading) {
+                                                        "Loading"
+                                                    } else if self.paused {
+                                                        "Play"
+                                                    } else {
+                                                        "Pause"
+                                                    },
+                                                )
                                                 .tab_index(0)
                                                 .focus_visible(|style| {
                                                     style.border_2().border_color(rgb(TEXT))
                                                 })
-                                                .size(px(64.))
+                                                .size(px(56.))
                                                 .flex()
                                                 .items_center()
                                                 .justify_center()
                                                 .rounded_full()
                                                 .bg(rgb(ACCENT))
                                                 .text_color(rgb(ON_ACCENT))
-                                                .text_size(px(15.))
-                                                .font_weight(FontWeight::BOLD)
                                                 .cursor_pointer()
                                                 .on_click(cx.listener(|this, _, _, cx| {
                                                     this.toggle_pause(cx)
                                                 }))
                                                 .child(if matches!(&self.phase, Phase::Loading) {
-                                                    div()
-                                                        .text_size(px(20.))
-                                                        .child("…")
-                                                        .into_any_element()
+                                                    Icon::new(
+                                                        gpui_kit::assets::IconName::LoaderCircle,
+                                                    )
+                                                    .size(px(24.))
+                                                    .text_color(rgb(ON_ACCENT))
+                                                    .into_any_element()
                                                 } else {
                                                     Icon::new(if self.paused {
                                                         gpui_kit::assets::IconName::Play
@@ -1072,114 +1054,463 @@ impl Render for Player {
                                                 })
                                                 .size(px(56.))
                                                 .flex()
+                                                .flex_col()
                                                 .items_center()
                                                 .justify_center()
                                                 .rounded_full()
                                                 .bg(rgb(SURFACE_HIGH))
-                                                .text_sm()
                                                 .cursor_pointer()
                                                 .on_click(cx.listener(|this, _, _, cx| {
                                                     this.seek_by(10.0, cx)
                                                 }))
-                                                .child("+10s"),
+                                                .child(
+                                                    Icon::new(gpui_kit::assets::IconName::Redo2)
+                                                        .size(px(22.))
+                                                        .text_color(rgb(TEXT)),
+                                                )
+                                                .child(
+                                                    div()
+                                                        .text_size(px(9.))
+                                                        .text_color(rgb(TEXT2))
+                                                        .child("10"),
+                                                ),
                                         ),
                                 )
-                                .child(
-                                    div()
-                                        .flex()
-                                        .gap_3()
-                                        .child(
-                                            div()
-                                                .id("restart")
-                                                .role(gpui_kit::Role::Button)
-                                                .aria_label("Restart video")
-                                                .tab_index(0)
-                                                .focus_visible(|style| {
-                                                    style.border_2().border_color(rgb(TEXT))
-                                                })
-                                                .flex_1()
-                                                .h(px(48.))
-                                                .flex()
-                                                .items_center()
-                                                .justify_center()
-                                                .rounded_full()
-                                                .bg(rgb(PRIMARY_CONTAINER))
-                                                .text_color(rgb(ON_PRIMARY_CONTAINER))
-                                                .text_sm()
-                                                .font_weight(FontWeight::MEDIUM)
-                                                .cursor_pointer()
-                                                .on_click(cx.listener(|this, _, _, cx| {
-                                                    let Some(m) = this.mpv.clone() else {
-                                                        return;
-                                                    };
-                                                    this.reset_playback();
-                                                    this.phase = Phase::Loading;
-                                                    if let Err(e) =
-                                                        m.command(&["seek", "0", "absolute"])
-                                                    {
-                                                        log::error!("restart seek failed: {e:#}");
-                                                        this.phase = Phase::Error(format!(
-                                                            "Restart failed: {e:#}"
-                                                        ));
-                                                        cx.notify();
-                                                        return;
-                                                    }
-                                                    if let Err(e) =
-                                                        m.command(&["set", "pause", "no"])
-                                                    {
-                                                        log::error!(
-                                                            "restart unpause failed: {e:#}"
-                                                        );
-                                                        this.phase = Phase::Error(format!(
-                                                            "Restart failed: {e:#}"
-                                                        ));
-                                                        cx.notify();
-                                                        return;
-                                                    }
-                                                    this.phase = Phase::Playing;
-                                                    cx.notify();
-                                                }))
-                                                .child("Restart"),
-                                        )
-                                        .child(
-                                            div()
-                                                .id("seek-fwd-60")
-                                                .role(gpui_kit::Role::Button)
-                                                .aria_label("Seek forward 60 seconds")
-                                                .tab_index(0)
-                                                .focus_visible(|style| {
-                                                    style.border_2().border_color(rgb(TEXT))
-                                                })
-                                                .flex_1()
-                                                .h(px(48.))
-                                                .flex()
-                                                .items_center()
-                                                .justify_center()
-                                                .rounded_full()
-                                                .bg(rgb(SURFACE_HIGH))
-                                                .text_color(rgb(TEXT))
-                                                .text_sm()
-                                                .cursor_pointer()
-                                                .on_click(cx.listener(|this, _, _, cx| {
-                                                    this.seek_by(60.0, cx)
-                                                }))
-                                                .child("+60s"),
-                                        ),
-                                ),
+                                .when(!status_line.is_empty(), |d| {
+                                    d.child(
+                                        div()
+                                            .text_size(px(12.))
+                                            .text_color(rgb(TEXT2))
+                                            .child(status_line),
+                                    )
+                                })
+                                .when(error, |d| {
+                                    d.child(
+                                        div()
+                                            .p_3()
+                                            .rounded_lg()
+                                            .bg(rgb(SURFACE_HIGH))
+                                            .flex()
+                                            .items_start()
+                                            .gap_3()
+                                            .child(
+                                                Icon::new(gpui_kit::assets::IconName::Info)
+                                                    .size(px(18.))
+                                                    .text_color(rgb(ERROR)),
+                                            )
+                                            .child(
+                                                div()
+                                                    .flex_1()
+                                                    .min_w_0()
+                                                    .text_size(px(12.))
+                                                    .text_color(rgb(TEXT2))
+                                                    .line_clamp(3)
+                                                    .child(match &self.phase {
+                                                        Phase::Error(e) => e.clone(),
+                                                        _ => String::new(),
+                                                    }),
+                                            )
+                                            .child(
+                                                div()
+                                                    .id("retry")
+                                                    .role(gpui_kit::Role::Button)
+                                                    .aria_label("Retry playback")
+                                                    .tab_index(0)
+                                                    .focus_visible(|style| {
+                                                        style.border_2().border_color(rgb(TEXT))
+                                                    })
+                                                    .h(px(48.))
+                                                    .px_4()
+                                                    .flex_none()
+                                                    .flex()
+                                                    .items_center()
+                                                    .justify_center()
+                                                    .rounded_full()
+                                                    .bg(rgb(TEXT))
+                                                    .text_color(rgb(BG))
+                                                    .text_size(px(12.))
+                                                    .font_weight(FontWeight::MEDIUM)
+                                                    .cursor_pointer()
+                                                    .on_click(cx.listener(|this, _, _, cx| {
+                                                        this.retry_playback(cx)
+                                                    }))
+                                                    .child("Retry"),
+                                            ),
+                                    )
+                                })
+                                .when_some(fallback.clone(), |d, note| {
+                                    d.child(
+                                        div()
+                                            .flex()
+                                            .flex_col()
+                                            .gap_1()
+                                            .py_1()
+                                            .child(
+                                                div()
+                                                    .flex()
+                                                    .items_center()
+                                                    .gap_2()
+                                                    .child(
+                                                        Icon::new(gpui_kit::assets::IconName::Info)
+                                                            .size(px(14.))
+                                                            .text_color(rgb(ACCENT)),
+                                                    )
+                                                    .child(
+                                                        div()
+                                                            .flex_1()
+                                                            .text_size(px(11.))
+                                                            .text_color(rgb(TEXT2))
+                                                            .child("Playing at a lower quality"),
+                                                    )
+                                                    .child(
+                                                        div()
+                                                            .id("fallback-details")
+                                                            .role(gpui_kit::Role::Button)
+                                                            .aria_label("Quality details")
+                                                            .tab_index(0)
+                                                            .h(px(48.))
+                                                            .px_2()
+                                                            .flex()
+                                                            .items_center()
+                                                            .rounded_full()
+                                                            .text_size(px(11.))
+                                                            .font_weight(FontWeight::MEDIUM)
+                                                            .text_color(rgb(ACCENT))
+                                                            .cursor_pointer()
+                                                            .on_click(cx.listener(
+                                                                |this, _, _, cx| {
+                                                                    this.fallback_details =
+                                                                        !this.fallback_details;
+                                                                    cx.notify();
+                                                                },
+                                                            ))
+                                                            .child(if self.fallback_details {
+                                                                "Hide"
+                                                            } else {
+                                                                "Details"
+                                                            }),
+                                                    ),
+                                            )
+                                            .when(self.fallback_details, |d| {
+                                                d.child(
+                                                    div()
+                                                        .text_size(px(11.))
+                                                        .text_color(rgb(TEXT2))
+                                                        .child(note),
+                                                )
+                                            }),
+                                    )
+                                }),
                         )
-                        .when(!self.segments.is_empty(), |d| {
+                        // Overflow panel: only real actions.
+                        .when(self.menu_open, |d| {
+                            d.child(
+                                div()
+                                    .mx_4()
+                                    .mb_2()
+                                    .rounded_lg()
+                                    .bg(rgb(SURFACE_HIGH))
+                                    .flex()
+                                    .flex_col()
+                                    .child(
+                                        div()
+                                            .id("menu-restart")
+                                            .role(gpui_kit::Role::Button)
+                                            .aria_label("Restart video")
+                                            .tab_index(0)
+                                            .h(px(48.))
+                                            .px_4()
+                                            .flex()
+                                            .items_center()
+                                            .gap_3()
+                                            .cursor_pointer()
+                                            .on_click(cx.listener(|this, _, _, cx| {
+                                                let Some(m) = this.mpv.clone() else {
+                                                    return;
+                                                };
+                                                this.reset_playback();
+                                                this.phase = Phase::Loading;
+                                                this.menu_open = false;
+                                                let _ = m.command(&["seek", "0", "absolute"]);
+                                                let _ = m.command(&["set", "pause", "no"]);
+                                                this.phase = Phase::Playing;
+                                                cx.notify();
+                                            }))
+                                            .child(
+                                                Icon::new(gpui_kit::assets::IconName::RefreshCw)
+                                                    .size(px(18.))
+                                                    .text_color(rgb(TEXT)),
+                                            )
+                                            .child(
+                                                div()
+                                                    .text_size(px(13.))
+                                                    .text_color(rgb(TEXT))
+                                                    .child("Restart"),
+                                            ),
+                                    )
+                                    .child(
+                                        div()
+                                            .id("menu-copy")
+                                            .role(gpui_kit::Role::Button)
+                                            .aria_label("Copy video link")
+                                            .tab_index(0)
+                                            .h(px(48.))
+                                            .px_4()
+                                            .flex()
+                                            .items_center()
+                                            .gap_3()
+                                            .cursor_pointer()
+                                            .on_click(cx.listener(|this, _, _, cx| {
+                                                this.copy_link(cx);
+                                                this.menu_open = false;
+                                                cx.notify();
+                                            }))
+                                            .child(
+                                                Icon::new(gpui_kit::assets::IconName::Copy)
+                                                    .size(px(18.))
+                                                    .text_color(rgb(TEXT)),
+                                            )
+                                            .child(
+                                                div()
+                                                    .text_size(px(13.))
+                                                    .text_color(rgb(TEXT))
+                                                    .child(if self.copied_link {
+                                                        "Link copied"
+                                                    } else {
+                                                        "Copy link"
+                                                    }),
+                                            ),
+                                    ),
+                            )
+                        })
+                        .when(has_channel, |d| {
                             d.child(
                                 div()
                                     .px_4()
-                                    .py_2()
-                                    .rounded_full()
-                                    .bg(rgb(SURFACE_HIGH))
+                                    .pt_3()
+                                    .pb_2()
+                                    .flex()
+                                    .items_center()
+                                    .gap_3()
+                                    .child(avatar_element(
+                                        self.video.channel_avatar.as_deref(),
+                                        &self.video.channel_name,
+                                        px(40.),
+                                    ))
+                                    .child(
+                                        div()
+                                            .flex_1()
+                                            .min_w_0()
+                                            .text_size(px(14.))
+                                            .font_weight(FontWeight::MEDIUM)
+                                            .line_clamp(1)
+                                            .child(self.video.channel_name.clone()),
+                                    )
+                                    .when(self.video.channel_id.is_some(), |d| {
+                                        d.child(
+                                            div()
+                                                .id("subscribe")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label(if self.subscribed {
+                                                    "Unsubscribe"
+                                                } else {
+                                                    "Subscribe"
+                                                })
+                                                .tab_index(0)
+                                                .focus_visible(|style| {
+                                                    style.border_2().border_color(rgb(TEXT))
+                                                })
+                                                .h(px(48.))
+                                                .px_4()
+                                                .flex_none()
+                                                .flex()
+                                                .items_center()
+                                                .justify_center()
+                                                .gap_2()
+                                                .rounded_full()
+                                                .bg(if self.subscribed {
+                                                    rgb(SURFACE_HIGH)
+                                                } else {
+                                                    rgb(TEXT)
+                                                })
+                                                .text_color(if self.subscribed {
+                                                    rgb(TEXT)
+                                                } else {
+                                                    rgb(BG)
+                                                })
+                                                .text_size(px(12.))
+                                                .font_weight(FontWeight::MEDIUM)
+                                                .cursor_pointer()
+                                                .on_click(cx.listener(|this, _, _, cx| {
+                                                    this.toggle_subscribe(cx)
+                                                }))
+                                                .when(self.subscribed, |d| {
+                                                    d.child(
+                                                        Icon::new(
+                                                            gpui_kit::assets::IconName::Check,
+                                                        )
+                                                        .size(px(16.))
+                                                        .text_color(rgb(TEXT)),
+                                                    )
+                                                })
+                                                .child(if self.subscribed {
+                                                    "Subscribed"
+                                                } else {
+                                                    "Subscribe"
+                                                }),
+                                        )
+                                    }),
+                            )
+                        })
+                        .when(!meta.is_empty(), |d| {
+                            d.child(
+                                div()
+                                    .px_4()
+                                    .pb_2()
                                     .text_size(px(12.))
                                     .text_color(rgb(TEXT2))
-                                    .child(format!(
-                                        "SponsorBlock: {} segments",
-                                        self.segments.len()
-                                    )),
+                                    .child(meta),
+                            )
+                        })
+                        .child(
+                            div()
+                                .px_4()
+                                .py_2()
+                                .flex()
+                                .gap_2()
+                                .child(
+                                    div()
+                                        .id("like")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label(if self.liked { "Unlike" } else { "Like" })
+                                        .tab_index(0)
+                                        .focus_visible(|style| {
+                                            style.border_2().border_color(rgb(TEXT))
+                                        })
+                                        .flex_1()
+                                        .h(px(48.))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .gap_2()
+                                        .rounded_full()
+                                        .bg(if self.liked {
+                                            rgb(PRIMARY_CONTAINER)
+                                        } else {
+                                            rgb(SURFACE_HIGH)
+                                        })
+                                        .text_color(if self.liked {
+                                            rgb(ON_PRIMARY_CONTAINER)
+                                        } else {
+                                            rgb(TEXT)
+                                        })
+                                        .text_size(px(12.))
+                                        .font_weight(FontWeight::MEDIUM)
+                                        .cursor_pointer()
+                                        .on_click(
+                                            cx.listener(|this, _, _, cx| this.toggle_like(cx)),
+                                        )
+                                        .child(
+                                            Icon::new(gpui_kit::assets::IconName::ThumbsUp)
+                                                .size(px(18.))
+                                                .text_color(if self.liked {
+                                                    rgb(ON_PRIMARY_CONTAINER)
+                                                } else {
+                                                    rgb(TEXT)
+                                                }),
+                                        )
+                                        .child(if self.liked { "Liked" } else { "Like" }),
+                                )
+                                .child(
+                                    div()
+                                        .id("copy-link")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label("Copy video link")
+                                        .tab_index(0)
+                                        .focus_visible(|style| {
+                                            style.border_2().border_color(rgb(TEXT))
+                                        })
+                                        .w(px(48.))
+                                        .flex_none()
+                                        .h(px(48.))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded_full()
+                                        .bg(rgb(SURFACE_HIGH))
+                                        .text_color(rgb(TEXT))
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|this, _, _, cx| this.copy_link(cx)))
+                                        .child(
+                                            Icon::new(if self.copied_link {
+                                                gpui_kit::assets::IconName::Check
+                                            } else {
+                                                gpui_kit::assets::IconName::Copy
+                                            })
+                                            .size(px(18.))
+                                            .text_color(if self.copied_link {
+                                                rgb(ACCENT)
+                                            } else {
+                                                rgb(TEXT)
+                                            }),
+                                        ),
+                                ),
+                        )
+                        .when_some(desc, |d, description| {
+                            d.child(
+                                div()
+                                    .mx_4()
+                                    .mt_2()
+                                    .p_3()
+                                    .rounded_lg()
+                                    .bg(rgb(SURFACE_HIGH))
+                                    .flex()
+                                    .flex_col()
+                                    .gap_2()
+                                    .child(
+                                        div()
+                                            .text_size(px(13.))
+                                            .text_color(rgb(TEXT2))
+                                            .when(!self.desc_open, |d| d.line_clamp(2))
+                                            .child(description),
+                                    )
+                                    .child(
+                                        div()
+                                            .id("desc-toggle")
+                                            .role(gpui_kit::Role::Button)
+                                            .aria_label(if self.desc_open {
+                                                "Show less"
+                                            } else {
+                                                "Show more"
+                                            })
+                                            .tab_index(0)
+                                            .h(px(32.))
+                                            .flex()
+                                            .items_center()
+                                            .text_size(px(11.))
+                                            .font_weight(FontWeight::MEDIUM)
+                                            .text_color(rgb(ACCENT))
+                                            .cursor_pointer()
+                                            .on_click(cx.listener(|this, _, _, cx| {
+                                                this.desc_open = !this.desc_open;
+                                                cx.notify();
+                                            }))
+                                            .child(if self.desc_open {
+                                                "Show less"
+                                            } else {
+                                                "More"
+                                            }),
+                                    ),
+                            )
+                        })
+                        .when(sponsor_count > 0, |d| {
+                            d.child(
+                                div()
+                                    .px_4()
+                                    .pt_3()
+                                    .text_size(px(11.))
+                                    .text_color(rgb(TEXT2))
+                                    .child(format!("SponsorBlock · {sponsor_count} segments")),
                             )
                         }),
                 ),
@@ -1190,7 +1521,7 @@ impl Render for Player {
 fn progress_bar(progress: f64) -> Stateful<Div> {
     div()
         .w_full()
-        .h(px(4.))
+        .h(px(6.))
         .id("playback-progress")
         .role(gpui_kit::Role::ProgressIndicator)
         .aria_label("Playback progress")
