@@ -17,7 +17,7 @@
 يُعتبر الهدف محققاً فقط عند تحقق **كل** البنود التالية بدليل حقيقي:
 
 - [ ] APK موقّع (release) يُثبَّت على Android 8+ (arm64) ويعمل على المحاكي (x86_64) بلا انهيار عند الإقلاع.
-- [ ] Home حقيقي من النواة عبر الشبكة + البحث يعملان.
+- [x] Home حقيقي من النواة عبر الشبكة + البحث يعملان.
 - [ ] النقر على فيديو → تشغيل بصورة وصوت. الفك العتادي إن توفر؛ وإلا احتياطي مُوثّق.
 - [x] **الاستخراج يعمل بلا yt-dlp** على جهاز/محاكي (انظر مسار الحرج §6-Track A). إن حجب يوتيوب كل العملاء → يُوثّق الحاجز ويُثبت خط التشغيل بفيديو اختبار عام، ويُوسم البند «محجوب خارجياً» لا «منجز».
 - [ ] SponsorBlock يتخطى فعلياً.
@@ -98,7 +98,7 @@ WHILE الميزانية متبقية:
 > اكتشاف المرحلة 0: سكربتات `third_party/ejs` **غير موصولة** ولا محرك JS؛ سطح المكتب يعتمد yt-dlp. على أندرويد لا yt-dlp → التشغيل نفسه معطّل حتى يثبت هذا المسار.
 
 - [x] A1 (الأسرع): جرّب عميل **android_vr** ثم **visionOS** في `streams.rs` — قد يعيدان روابط مباشرة بلا nsig. أثبت ستريم صالحاً على المحاكي.
-- [ ] A2 (المتانة): ضمّن **rquickjs** (QuickJS عبر NDK؛ Boa احتياطي بطيء)، صِل `yt.solver.core/lib.min.js` بخط الاستخراج، ووفّر جسر الدوال المضيفة الذي تتوقعه السكربتات. أثبت حل تحدّي nsig واحد حقيقي.
+- [x] A2 (المتانة): ضمّن **rquickjs** (QuickJS عبر NDK؛ Boa احتياطي بطيء)، صِل `yt.solver.core/lib.min.js` بخط الاستخراج، ووفّر جسر الدوال المضيفة التي تتوقعه السكربتات. أثبت حل تحدّي nsig واحد حقيقي.
 - [ ] A3: آلية تحديث سكربتات الحلّ عند تغيّر مشغّل يوتيوب (مثبّتة + قابلة للتحديث).
 - [ ] A4: معالجة PO Tokens / «Sign in to confirm you're not a bot» (مزوّد WebView مصغّر أو كوكيز).
 - [x] A5 (شبكة أمان للاختبار): خط تشغيل بفيديو HLS/MP4 عام معروف الصلاحية، للتحقق من المشغّل حتى لو حُجب يوتيوب (DR-2).
@@ -106,10 +106,10 @@ WHILE الميزانية متبقية:
 
 ### Track B — المسار A المعماري: GPUI عبر gpui-mobile (بالتوازي مع A)
 - [x] B1 مواءمة الإصدارات (**حقيقة محدّثة:** gpui-mobile يثبّت `gpui-pre = "=0.3.12"` و`gpui-pre-wgpu = "=0.3.12"`؛ أندرويد يستخدم wgpu 30.0.2، و29 خاص بـiOS). افحص توافق gpui-kit 0.10 و`src/ui`؛ وثّق في `docs/VERSION_ALIGNMENT.md`. عند الاستعصاء → DR-1.
-- [ ] B2 اعتمد gpui-mobile بـ `default-features = false` + فعّل فقط: `video_player, media_session, deeplink, file_selector, clipboard, notifications` (الافتراضي يفعّل ~30 حزمة بلا حاجة). رخصة Apache-2.0.
-- [ ] B3 صدفة Gradle ترث `GpuiInputActivity` + crate `streamtube-android` + jniLibs عبر cargo-ndk (NDK r27c).
-- [ ] B4 **فحص 16KB مبكر** لكل `.so` فور أول بناء: `llvm-readelf -l … | grep LOAD` → Align=0x4000.
-- [ ] B5 عرض Home حقيقي + الفتح الفوري من الفيد المخزّن.
+- [x] B2 اعتمد gpui-mobile بـ `default-features = false` + فعّل فقط: `video_player, media_session, deeplink, file_selector, clipboard, notifications` (الافتراضي يفعّل ~30 حزمة بلا حاجة). رخصة Apache-2.0.
+- [x] B3 صدفة Gradle ترث `GpuiInputActivity` + crate `streamtube-android` + jniLibs عبر cargo-ndk (NDK r27c).
+- [x] B4 **فحص 16KB مبكر** لكل `.so` فور أول بناء: `llvm-readelf -l … | grep LOAD` → Align=0x4000.
+- [ ] B5 عرض Home حقيقي + الفتح الفوري من الفيد المخزّن. **Home/search مثبتان على المحاكي؛ الفتح الفوري من الكاش ينتظر Track C.**
 - [ ] B6 قياسات موثّقة: RAM (`dumpsys meminfo` ≤250MB)، fps (Perfetto)، 100 دورة حياة عبر adb، تشكيل/RTL/IME عربي.
 **قبول (آلي، بلا انتظار بشري):** المعايير الخمسة محققة → استمر بالمسار A؛ وإلا DR-1 → المسار B (Compose).
 
