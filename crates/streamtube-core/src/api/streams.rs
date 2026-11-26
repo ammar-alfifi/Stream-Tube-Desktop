@@ -60,10 +60,16 @@ fn resolve(video_id: &str) -> Result<StreamInfo> {
 }
 
 /// On Android there is no yt-dlp binary and no desktop, so the backend
-/// setting is moot: the built-in Innertube chain only (plan2.md Track A1).
+/// setting is moot: the built-in chain only (plan2.md Tracks A1+A2) —
+/// ANDROID_VR's direct formats, then the watch page deciphered with the
+/// bundled EJS solver, then the Apple clients' HLS manifests.
 #[cfg(target_os = "android")]
 fn resolve_anonymous(video_id: &str) -> Result<StreamInfo> {
-    android_vr_first(video_id)
+    android_vr(video_id)
+        .and_then(|i| if i.video.is_empty() && i.hls_url.is_none() { Err(anyhow!("Android VR returned no playable formats")) } else { Ok(i) })
+        .or_else(|e| crate::api::web_stream::resolve(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
+        .or_else(|e| visionos(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
+        .or_else(|e| ios(video_id).map_err(|e2| anyhow!("{e}\n{e2}")))
 }
 
 #[cfg(not(target_os = "android"))]
@@ -485,7 +491,7 @@ fn android_vr(video_id: &str) -> Result<StreamInfo> {
 /// Returns an error when YouTube's `playabilityStatus` is not `OK`.
 /// Keeps the machine-readable `status` (such as `LOGIN_REQUIRED`) alongside a
 /// localized `reason` so `needs_sign_in` still triggers for non-English locales.
-fn playability_error(r: &Value, label: Option<&str>) -> Option<anyhow::Error> {
+pub(crate) fn playability_error(r: &Value, label: Option<&str>) -> Option<anyhow::Error> {
     let status = r.pointer("/playabilityStatus/status").and_then(Value::as_str).unwrap_or("");
     if status == "OK" {
         return None;
@@ -638,7 +644,7 @@ fn extract_innertube_original_lang(r: &Value) -> Option<String> {
     None
 }
 
-fn parse_player(r: &Value) -> StreamInfo {
+pub(crate) fn parse_player(r: &Value) -> StreamInfo {
     let vd = r.get("videoDetails").cloned().unwrap_or(Value::Null);
     let sd = r.get("streamingData").cloned().unwrap_or(Value::Null);
     let mut info = StreamInfo {

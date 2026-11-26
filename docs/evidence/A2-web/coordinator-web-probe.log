@@ -1,0 +1,29 @@
+   Compiling itertools v0.13.0
+   Compiling bindgen v0.72.1
+   Compiling rquickjs-sys v0.14.0
+   Compiling rquickjs-core v0.14.0
+   Compiling rquickjs v0.14.0
+   Compiling streamtube-core v0.7.5-alpha (/home/ammar/projects/Stream-Tube-Desktop/crates/streamtube-core)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 1m 13s
+     Running `target/debug/examples/web_stream_probe dQw4w9WgXcQ`
+video: dQw4w9WgXcQ
+--- web fallback steps ---
+watch page: 1489301 bytes in 1.12957214s
+playability: OK (1.131885159s so far)
+player JS: https://www.youtube.com/s/player/b485e332/player_es6.vflset/en_US/base.js (2721418 bytes, 331.919419ms)
+formats to decipher: 1 (1 with signatureCipher)
+challenges: 1 sig, 1 n
+EJS solve: 7.750669444s
+sig WAE0s2JYwAAIgKMsdBnKNeT8eETR5RfK2E6-7boVHcJXgqrSZr9GeOeICIqwaQu9z_jY8zWvaQ2YEhTfYmkd224C64Kx7lhbVPbKD -> AE0s2JYwRAIgKMsdBnKNeT8eETR5qfK2E6-7boVWcJXgqrSZr9GeOeICIHwaQu9z_jY8zWvaQ2YEhTfYmkd224C64Kx7lhbVPbKD
+n hpnncqCBVPUxUHK6z -> 8hNEK-q2T7KmhA
+deciphered formats: 0 video, 0 audio, 1 muxed, hls=false in 9.216104665s total
+
+title: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) | live: false | hls: false | video 0 audio 0 muxed 1
+  itag 18 video/mp4 640x360 360p (url 1199 bytes)
+--- range check (bytes=0-1023) ---
+itag 18 url head: https://rr7---sn-nuj-wxqy.googlevideo.com/videoplayback?expire=1795719525&ei=BS0Ia53zEZGfhcIP0_-WuQs&ip=151.255.40.183&i
+HTTP 206
+Content-Type: video/mp4
+Content-Range: bytes 0-1023/11829048
+Bytes read: 1024
+RESULT: PASS (deciphered web URL serves a real byte range)
