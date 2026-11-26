@@ -282,7 +282,7 @@ impl Render for ChannelPage {
                                                 copy_to_clipboard(format!("https://www.youtube.com/channel/{}", info.id), cx)
                                             }),
                                             MenuItem::new("globe", t("Open on YouTube"), move |_, _| {
-                                                let _ = open::that(format!("https://www.youtube.com/channel/{id}"));
+                                                let _ = crate::platform::open(format!("https://www.youtube.com/channel/{id}"));
                                             }),
                                         ];
                                         if blocked {

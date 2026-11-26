@@ -1,0 +1,16 @@
+
+running 1 test
+watch page: 1490616 bytes in 1.043396821s
+playability: OK (1.050767431s so far)
+player JS: https://www.youtube.com/s/player/b485e332/player_es6.vflset/en_US/base.js (2721418 bytes, 376.515107ms)
+formats to decipher: 1 (1 with signatureCipher)
+challenges: 1 sig, 1 n
+EJS solve: 13.883621816s
+sig JAE0s2JYwAAIgCjXIW_-LWH1SnGBPReYTxc7SyRBB2V8cgN-WTnnNHI4CIXLgc6Zb_s-SP_c3dkvyv5Cm_uy-lKedlj48U5TmI9g8 -> AE0s2JYwRAIgCjXIW_-LWH1SnGBPXeYTxc7SyRBJ2V8cgN-WTnnNHI4CIBLgc6Zb_s-SP_c3dkvyv5Cm_uy-lKedlj48U5TmI9g8
+n DpfaMUHc2JXpy6_rY -> E45JP-TMj-lJQA
+deciphered formats: 0 video, 0 audio, 1 muxed, hls=false in 15.313163384s total
+
+range-testing itag 18 https://rr7---sn-nuj-wxqy.googlevideo.com/videoplayback?expire=1795716082&ei=kR8Ia7vFOvLY0
+HTTP 206 range=Some("bytes 0-1023/11829048") bytes=1024
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 92 filtered out; finished in 15.53s

@@ -1,0 +1,4 @@
+    Building arm64-v8a (aarch64-linux-android)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.36s
+    Building x86_64 (x86_64-linux-android)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.38s

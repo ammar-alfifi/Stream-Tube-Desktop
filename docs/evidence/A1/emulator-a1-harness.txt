@@ -1,0 +1,21 @@
+# command: adb shell 'TMPDIR=/data/local/tmp /data/local/tmp/a1_harness dQw4w9WgXcQ' (binary: cargo ndk -t x86_64-linux-android -P 26 build -p streamtube-core --release --example a1_harness — from HEAD f795b66 + A1/A5 diff)
+# date: 2026-11-26 11:19:23 UTC  device: emulator-5554, Android 15 (API 35), x86_64
+[a1] harness start: video=dQw4w9WgXcQ data_dir=/data/local/tmp/a1-harness-4254
+[a1] chain: ANDROID_VR -> visionOS -> iOS (no yt-dlp involved)
+[a1] resolved: client=ANDROID_VR 1.65.10 (Oculus Quest 3) source=innertube title="Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" live=false formats: video=22 audio=4 muxed=1 hls_url=false
+[a1] best video: 1920x1080 25fps codecs=vp9 itag=248 label=1080p
+[a1] video Range GET bytes=0-1048575 -> HTTP 206, 1048576 bytes
+[a1]   https://rr7---sn-nuj-wxqy.googlevideo.com/videoplayback?expire=1795713563&ei=uxUIa6rBNI7cp-oP54L1oQc&ip=151.255.40.183&id=o-AIJkptc_WUdFspUF4hRdzyeX-eQkObt0U3sMjOy3oMiS&itag=248&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&cps=1126&met=1795691963%2C&mh=7c&mm=18%2C29&mn=sn-nuj-wxqy%2Csn-2ohpa5-5h&ms=aub%2Crdu&mv=m&mvi=7&pcm2cms=yes&pl=24&rms=aub%2Caub&pcm2=no&initcwndbps=680375&bui=AZFAFb94Bfw5Gz8agbKI9W0BwHE5wKt6D-JFOk_11I6NLAQ3Zb2SRrw17y_iuO2viBCX4-FmJi9uneIg&spc=nfZ8ZrOvMxFuzHrWGBEzHqI3qwkQld2HiMBcmU7B6dN3WwbHEA&vprv=1&svpuc=1&mime=video%2Fwebm&rqh=1&gir=yes&clen=30846580&dur=213.040&lmt=1766963494258902&mt=1795691380&fvip=1&epbp=1&keepalive=yes&fexp=51565116&c=ANDROID_VR&txp=5532534&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cpcm2%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Crqh%2Cgir%2Cclen%2Cdur%2Clmt&sig=AE0s2JYwRQIhAI3B01-lxA-X4gRgMMZ8RJp3eA7gwYu1O5A2G1DHEmHOAiA_oifoKwwoORclIfmL-QeQw3U_Wk402QhjM2H7VBxUsQ%3D%3D&lsparams=cps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpcm2cms%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRAIgGe10ZiO_wPnpPf7E47NfZ_vkCdewvp0-UWkoEfDagrUCIBM7bTeK9iNaQOzpwRZ31LV54DbMa-znPfeYIO2WTmRd
+[a1] best audio: codecs=opus itag=251 label=""
+[a1] audio Range GET bytes=0-262143 -> HTTP 206, 262144 bytes
+[a5] general fallback (known-valid public streams)
+[http] https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8 -> transport error (attempt 1/3): timeout: global
+[http] attempt 2 succeeded: https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+[hls] master -> HTTP 200, 752 bytes, 5 variants
+[hls]   https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+[hls] variant -> HTTP 200, 3606 bytes
+[hls]   https://test-streams.mux.dev/x36xhzz/url_0/193039199_mp4_h264_aac_hd_7.m3u8
+[hls] segment -> HTTP 200, 1915156 bytes
+[a5] mp4 Range GET bytes=0-1048575 -> HTTP 206, 1048576 bytes
+[a5]   https://media.w3.org/2010/05/sintel/trailer.mp4
+[a1] FINAL VERDICT: A1_OK: playable YouTube stream proven without yt-dlp (fallback_ok=true)

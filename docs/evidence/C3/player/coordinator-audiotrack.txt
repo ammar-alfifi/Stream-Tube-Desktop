@@ -1,0 +1,101 @@
+  muted player piids due to call/ring:
+11-26 16:55:32:117 new player piid:199 uid/pid:10211/31797 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:209
+11-26 16:55:32:118 port updated portId:32 mapped to player piid:199
+11-26 16:55:32:594 player piid:199 event:started
+11-26 16:55:32:597 player piid:199 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=48000}
+11-26 16:55:32:602 player piid:199 event:device updated deviceId:2
+11-26 16:55:38:173 player piid:199 event:paused
+11-26 16:55:38:473 player piid:199 event:started
+11-26 16:55:38:475 player piid:199 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=48000}
+11-26 16:55:38:478 player piid:199 event:device updated deviceId:2
+11-26 16:55:49:674 player piid:199 event:paused
+11-26 16:55:49:707 player piid:199 event:stopped
+11-26 16:55:49:707 player piid:199 event:stopped
+11-26 16:55:49:707 releasing player piid:199, uid:10211
+11-26 16:55:56:319 new player piid:207 uid/pid:10211/31797 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:217
+11-26 16:55:56:320 port updated portId:33 mapped to player piid:207
+11-26 16:55:56:766 player piid:207 event:started
+11-26 16:55:56:776 player piid:207 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=48000}
+11-26 16:55:56:776 player piid:207 event:device updated deviceId:2
+11-26 16:56:57:799 player piid:207 event:paused
+11-26 17:00:16:457 releasing player piid:207, uid:0
+11-26 17:01:52:627 new player piid:215 uid/pid:10211/725 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:225
+11-26 17:01:52:628 port updated portId:34 mapped to player piid:215
+11-26 17:01:52:941 player piid:215 event:started
+11-26 17:01:52:943 player piid:215 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:01:52:953 player piid:215 event:device updated deviceId:2
+11-26 17:02:03:485 player piid:215 event:paused
+11-26 17:02:18:455 player piid:215 event:started
+11-26 17:02:18:458 player piid:215 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:02:18:462 player piid:215 event:device updated deviceId:2
+11-26 17:02:30:814 player piid:215 event:paused
+11-26 17:02:34:720 player piid:215 event:started
+11-26 17:02:34:724 player piid:215 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:02:34:725 player piid:215 event:device updated deviceId:2
+11-26 17:02:44:177 player piid:215 event:paused
+11-26 17:03:01:802 player piid:215 event:started
+11-26 17:03:01:804 player piid:215 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:03:01:808 player piid:215 event:device updated deviceId:2
+11-26 17:03:27:578 player piid:215 event:paused
+11-26 17:03:41:387 player piid:215 event:started
+11-26 17:03:41:388 player piid:215 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:03:41:401 player piid:215 event:device updated deviceId:2
+11-26 17:03:41:643 player piid:215 event:paused
+11-26 17:07:00:558 releasing player piid:215, uid:0
+11-26 17:07:14:107 new player piid:223 uid/pid:10211/3467 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:233
+11-26 17:07:14:107 port updated portId:35 mapped to player piid:223
+11-26 17:07:14:450 player piid:223 event:started
+11-26 17:07:14:454 player piid:223 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:07:14:462 player piid:223 event:device updated deviceId:2
+11-26 17:07:24:994 player piid:223 event:paused
+11-26 17:07:33:426 player piid:223 event:started
+11-26 17:07:33:428 player piid:223 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:07:33:431 player piid:223 event:device updated deviceId:2
+11-26 17:07:45:784 player piid:223 event:paused
+11-26 17:07:51:730 player piid:223 event:started
+11-26 17:07:51:732 player piid:223 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:07:51:736 player piid:223 event:device updated deviceId:2
+11-26 17:08:01:186 player piid:223 event:paused
+11-26 17:08:10:474 player piid:223 event:started
+11-26 17:08:10:475 player piid:223 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:08:10:477 player piid:223 event:device updated deviceId:2
+11-26 17:08:21:833 player piid:223 event:paused
+11-26 17:08:28:545 player piid:223 event:started
+11-26 17:08:28:548 player piid:223 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:08:28:566 player piid:223 event:device updated deviceId:2
+11-26 17:08:42:817 player piid:223 event:paused
+11-26 17:08:43:057 player piid:223 event:started
+11-26 17:08:43:059 player piid:223 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:08:43:070 player piid:223 event:device updated deviceId:2
+11-26 17:08:43:388 player piid:223 event:paused
+11-26 17:08:54:431 releasing player piid:223, uid:0
+11-26 17:09:23:102 new player piid:231 uid/pid:10211/5319 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:241
+11-26 17:09:23:102 port updated portId:36 mapped to player piid:231
+11-26 17:09:23:230 player piid:231 event:started
+11-26 17:09:23:233 player piid:231 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=44100}
+11-26 17:09:23:256 player piid:231 event:device updated deviceId:2
+11-26 17:10:22:591 player piid:231 event:paused
+11-26 17:11:44:504 releasing player piid:231, uid:0
+11-26 17:16:07:046 new player piid:239 uid/pid:10211/8561 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:249
+11-26 17:16:07:051 port updated portId:37 mapped to player piid:239
+11-26 17:16:07:523 player piid:239 event:started
+11-26 17:16:07:531 player piid:239 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=48000}
+11-26 17:16:07:554 player piid:239 event:device updated deviceId:2
+11-26 17:16:13:125 player piid:239 event:paused
+11-26 17:16:13:416 player piid:239 event:started
+11-26 17:16:13:418 player piid:239 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=48000}
+11-26 17:16:13:421 player piid:239 event:device updated deviceId:2
+11-26 17:16:52:479 player piid:239 event:paused
+11-26 17:16:52:502 player piid:239 event:stopped
+11-26 17:16:52:502 player piid:239 event:stopped
+11-26 17:16:52:502 releasing player piid:239, uid:10211
+11-26 17:20:07:569 new player piid:247 uid/pid:10211/9225 type:android.media.AudioTrack attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_UNKNOWN flags=0xA00 tags= bundle=null session:257
+11-26 17:20:07:570 port updated portId:38 mapped to player piid:247
+11-26 17:20:07:726 player piid:247 event:started
+11-26 17:20:07:731 player piid:247 format update:FormatInfo{isSpatialized=false, channelMask=0x3, sampleRate=48000}
+11-26 17:20:07:768 player piid:247 event:device updated deviceId:2
+11-26 17:20:24:517 player piid:247 event:paused
+11-26 17:21:07:685 player piid:247 event:paused
+11-26 17:21:07:700 player piid:247 event:stopped
+11-26 17:21:07:700 player piid:247 event:stopped
+11-26 17:21:07:701 releasing player piid:247, uid:10211

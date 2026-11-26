@@ -1,0 +1,49 @@
+الخميس 26 نوفمبر 2026 UTC 13:10:34
+Applications Memory Usage (in Kilobytes):
+Uptime: 3234417 Realtime: 3234417
+
+** MEMINFO in pid 21086 [dev.streamtube.android] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   373874   373852        4       76   374776   422108   380411    36010
+  Dalvik Heap     5551      476     5012       36     6920     3992     1996     1996
+ Dalvik Other     4221     1476       44        3     7300
+        Stack      952      952        0        0      960
+       Ashmem       15        0        0        0      556
+    Other dev       15        0       12        0      328
+     .so mmap     3158      212     1592       18    28780
+    .jar mmap     1814        0        0        0    40420
+    .apk mmap    29692     1860    27756        0    30960
+    .dex mmap       17        0        0        0      832
+    .oat mmap       39        0        0        0     1476
+    .art mmap     9766     7812     1424       90    26212
+   Other mmap     1449        4       32        0     3644
+      Unknown     4604     4596        0        0     5032
+        TOTAL   435390   391240    35876      223   528196   426100   382407    38006
+
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:     9712                          33132
+         Native Heap:   373852                         374776
+                Code:    31584                         108020
+               Stack:      952                            960
+            Graphics:        0                              0
+       Private Other:    11016
+              System:     8274
+             Unknown:                                   11308
+
+           TOTAL PSS:   435390            TOTAL RSS:   528196       TOTAL SWAP PSS:      223
+
+ Objects
+               Views:        7         ViewRootImpl:        1
+         AppContexts:        5           Activities:        1
+              Assets:       20        AssetManagers:        0
+       Local Binders:       10        Proxy Binders:       52
+       Parcel memory:        5         Parcel count:       20
+    Death Recipients:        0             WebViews:        0
+
+ SQL
+         MEMORY_USED:        0
+  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0

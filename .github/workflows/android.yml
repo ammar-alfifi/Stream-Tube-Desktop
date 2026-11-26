@@ -1,0 +1,113 @@
+name: android
+
+on:
+  push:
+    branches: [chore/android-core-split, main]
+    paths:
+      - '.github/workflows/android.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - 'src/**'
+      - 'third_party/**'
+      - 'android/**'
+      - 'scripts/**'
+  pull_request:
+    paths:
+      - '.github/workflows/android.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - 'src/**'
+      - 'third_party/**'
+      - 'android/**'
+      - 'scripts/**'
+
+permissions:
+  contents: read
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install Android platform and build tools
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --version 4.1.2 --locked
+
+      - name: Check core and Android shell
+        shell: bash
+        run: |
+          export LIBCLANG_PATH="$(dirname "$(find "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt" -name libclang.so -print -quit)")"
+          test -f "$LIBCLANG_PATH/libclang.so"
+          cargo ndk -t arm64-v8a -t x86_64 -P 26 check \
+            -p streamtube-core -p streamtube-android --locked
+
+      - name: Fetch pinned native payloads
+        run: |
+          scripts/fetch-android-fonts.sh
+          scripts/fetch-libmpv.sh
+
+      - name: Build Rust shell for both ABIs
+        shell: bash
+        run: |
+          export LIBCLANG_PATH="$(dirname "$(find "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt" -name libclang.so -print -quit)")"
+          cargo ndk -t arm64-v8a -t x86_64 -P 26 \
+            -o android/app/src/main/jniLibs build --release \
+            -p streamtube-android --locked
+          STRIP="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
+          for abi in arm64-v8a x86_64; do
+            "$STRIP" --strip-debug "android/app/src/main/jniLibs/$abi/libstreamtube_android.so"
+            rm -f "android/app/src/main/jniLibs/$abi/libgpui_mobile.so"
+          done
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --console=plain
+
+      - name: Verify APK alignment and signature
+        shell: bash
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 -v 4 "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          sha256sum "$APK" > SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: streamtube-android-debug
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            SHA256SUMS.txt
+          retention-days: 14
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: android/app/build/outputs/apk/debug/app-debug.apk

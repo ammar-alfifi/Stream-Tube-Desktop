@@ -1,0 +1,11 @@
+APK bytes: 63318299
+APK MiB: 60.4
+
+lib/arm64-v8a: raw 49.5 MiB, zip 49.5 MiB
+assets/fonts: raw 10.1 MiB, zip 9.4 MiB
+classes.dex: raw 3.4 MiB, zip 1.1 MiB
+res: raw 0.2 MiB, zip 0.2 MiB
+resources.arsc: raw 0.1 MiB, zip 0.1 MiB
+kotlin: raw 0.0 MiB, zip 0.0 MiB
+AndroidManifest.xml: raw 0.0 MiB, zip 0.0 MiB
+META-INF: raw 0.0 MiB, zip 0.0 MiB

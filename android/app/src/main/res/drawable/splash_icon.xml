@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash screen icon: a play triangle on the Stream Tube accent
+     (#FF0033, the store's default accent). Used as
+     windowSplashScreenAnimatedIcon on API 31+ and as a centered drawable
+     in the splash layer-list on API < 31. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rounded rectangle background -->
+    <path
+        android:fillColor="#FF0033"
+        android:pathData="M20,20h68a8,8 0,0 1,8 8v52a8,8 0,0 1,-8 8h-68a8,8 0,0 1,-8,-8v-52a8,8 0,0 1,8,-8z" />
+    <!-- Play triangle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,38 L70,54 L46,70 Z" />
+</vector>

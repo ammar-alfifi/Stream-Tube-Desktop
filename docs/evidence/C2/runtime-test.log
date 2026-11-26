@@ -1,0 +1,28 @@
+# C2: RUNTIME verification of libmpv.so on Android emulator (dlopen + client API)
+# emulator: emulator-5554	device
+# API: 35 (15) abilist: x86_64,arm64-v8a
+# test binary: dlopen-test.c built with NDK r27c (27.2.12479018), -android26 targets
+# date: 2026-11-26T10:53:33Z
+
+===== x86_64 (NATIVE on emulator) =====
+preloaded 8 deps OK
+dlopen("libmpv.so", RTLD_NOW) = 0xbedf097c2071a1b9 OK
+mpv_client_api_version = 0x20005 (client API 2.0)
+mpv_create() = 0x71829a66ac80
+mpv_initialize() = 0 (success)
+mpv_terminate_destroy() OK
+RUNTIME VERIFICATION PASSED
+exit=0
+
+===== arm64-v8a (via ndk_translation on x86_64 emulator — NOT a real arm64 CPU; real-device check pending, plan §5-3) =====
+preloaded 8 deps OK
+dlopen("/data/local/tmp/c2libs-arm64/libmpv.so", RTLD_NOW) = 0x31edf2aed92a58a5 OK
+mpv_client_api_version = 0x20005 (client API 2.0)
+mpv_create() = 0x7414a74d2e40
+mpv_initialize() = 0 (success)
+mpv_terminate_destroy() OK
+RUNTIME VERIFICATION PASSED
+exit=0
+
+NOTE: under ndk_translation the linker ignores LD_LIBRARY_PATH for transitive deps,
+hence the test preloads the 8 NEEDED deps by absolute path in topological order before libmpv.so.

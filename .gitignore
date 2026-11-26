@@ -15,3 +15,15 @@ Thumbs.db
 
 # built in CI from the Khronos Vulkan-Loader sources
 /third_party/vulkan/
+
+# Android shell: build outputs and large native payloads stay out of git.
+# The Rust .so arrives via `cargo ndk -o android/app/src/main/jniLibs build`,
+# the libmpv set via scripts/fetch-libmpv.sh (see docs/evidence/C2).
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/app/src/main/jniLibs/
+# 10 MB CBDT emoji fallback for API < 33; copy it from the gpui-mobile
+# example tree (docs/evidence/B1) — too large for git.
+/android/app/src/main/assets/fonts/NotoColorEmoji.ttf

@@ -1,0 +1,300 @@
+--------- beginning of main
+11-26 15:45:18.605 19467 19487 I streamtube: streamtube_android: android_main: entered
+11-26 15:45:18.606 19467 19467 D streamtube: android_activity::activity_impl::glue: Start: 0x7af4a80041b0
+11-26 15:45:18.607 19467 19487 I streamtube: streamtube_android: store initialised at /data/user/0/dev.streamtube.android/files
+11-26 15:45:18.607 19467 19487 I streamtube: gpui_mobile::android::jni: init_platform: stored AndroidApp
+11-26 15:45:18.607 19467 19487 D streamtube: android_logger: android_logger: log::set_logger failed: attempted to set a logger after the logging system was already initialized
+11-26 15:45:18.607 19467 19487 I streamtube: gpui_mobile::android: gpui-android logger initialised
+11-26 15:45:18.608 19467 19487 D streamtube: gpui_mobile::android::dispatcher: AndroidDispatcher created (pool_threads=4)
+11-26 15:45:18.608 19467 19487 D streamtube: cosmic_text::font::system: Locale: ar-SA
+11-26 15:45:18.608 19467 19487 D streamtube: cosmic_text::font::system: Parsed 0 font faces in 0ms.
+11-26 15:45:18.610 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/Roboto-Regular.ttf (2371712 bytes)
+11-26 15:45:18.610 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/Roboto-Bold.ttf: No such file or directory (os error 2)
+11-26 15:45:18.610 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/Roboto-Italic.ttf: No such file or directory (os error 2)
+11-26 15:45:18.610 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/Roboto-BoldItalic.ttf: No such file or directory (os error 2)
+11-26 15:45:18.610 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/Roboto-Medium.ttf: No such file or directory (os error 2)
+11-26 15:45:18.610 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/Roboto-Light.ttf: No such file or directory (os error 2)
+11-26 15:45:18.610 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/Roboto-Thin.ttf: No such file or directory (os error 2)
+11-26 15:45:18.612 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/RobotoFlex-Regular.ttf (1775480 bytes)
+11-26 15:45:18.613 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/DroidSans.ttf (2371712 bytes)
+11-26 15:45:18.615 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/DroidSans-Bold.ttf (2371712 bytes)
+11-26 15:45:18.616 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/DroidSansMono.ttf (108128 bytes)
+11-26 15:45:18.616 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/RobotoMono-Regular.ttf: No such file or directory (os error 2)
+11-26 15:45:18.616 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/NotoSans-Regular.ttf: No such file or directory (os error 2)
+11-26 15:45:18.616 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/NotoSans-Bold.ttf: No such file or directory (os error 2)
+11-26 15:45:18.616 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/NotoSans-Italic.ttf: No such file or directory (os error 2)
+11-26 15:45:18.616 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/NotoSans-BoldItalic.ttf: No such file or directory (os error 2)
+11-26 15:45:18.636 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/NotoSansCJK-Regular.ttc (32355424 bytes)
+11-26 15:45:18.636 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/NotoSansDevanagari-Regular.otf: No such file or directory (os error 2)
+11-26 15:45:18.636 19467 19487 D streamtube: gpui_mobile::android::platform: skipping system font /system/fonts/NotoSansArabic-Regular.ttf: No such file or directory (os error 2)
+11-26 15:45:18.636 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/NotoSansHebrew-Regular.ttf (17352 bytes)
+11-26 15:45:18.636 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/NotoSansThai-Regular.ttf (21380 bytes)
+11-26 15:45:18.637 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/NotoColorEmojiFlags.ttf (912352 bytes)
+11-26 15:45:18.637 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/NotoSerif-Regular.ttf (246740 bytes)
+11-26 15:45:18.638 19467 19487 I streamtube: gpui_mobile::android::platform: loaded system font: /system/fonts/NotoSerif-Bold.ttf (247892 bytes)
+11-26 15:45:18.639 19467 19487 I streamtube: gpui_mobile::android::platform: system emoji font is COLR v1 (no CBDT) — will try bundled fallback
+11-26 15:45:18.720 19467 19487 I streamtube: gpui_mobile::android::platform: loaded bundled CBDT emoji font from assets (10589456 bytes)
+11-26 15:45:18.720 19467 19487 I streamtube: gpui_mobile::android::platform: AndroidPlatform::new — headless=false
+11-26 15:45:18.720 19467 19487 I streamtube: gpui_mobile::android::jni: init_platform: AndroidPlatform created
+11-26 15:45:18.720 19467 19487 I streamtube: streamtube_android: android_main: platform initialised
+11-26 15:45:18.721 19467 19487 D streamtube: gpui_mobile::android::platform: register_thermal_listener: callback stored (polling not yet wired into tick)
+11-26 15:45:18.721 19467 19487 I streamtube: gpui_mobile::android::platform: AndroidPlatform::run — callback stored, entering event loop
+11-26 15:45:18.721 19467 19487 I streamtube: gpui_mobile::android::jni: run_event_loop: entering main loop
+11-26 15:45:18.721 19467 19487 I streamtube: gpui_mobile::android::jni: MainEvent::Start
+11-26 15:45:18.724 19467 19467 D streamtube: android_activity::activity_impl::glue: Resume: 0x7af4a80041b0
+11-26 15:45:18.724 19467 19487 I streamtube: gpui_mobile::android::jni: MainEvent::Resume
+11-26 15:45:18.724 19467 19487 I streamtube: gpui_mobile::android::jni: deferred: Resume (iter=2)
+11-26 15:45:18.724 19467 19487 D streamtube: gpui_mobile::android::platform: AndroidPlatform::did_become_active
+11-26 15:45:18.724 19467 19487 D streamtube: gpui_mobile::android::jni: find_app_class: loaded dev.gpui.mobile.GpuiPlatformView
+11-26 15:45:18.738 19467 19467 D streamtube: android_activity::activity_impl::glue: InputQueueCreated: 0x7af4a80041b0 -- 0x7af467fb8570
+11-26 15:45:18.757 19467 19467 D streamtube: android_activity::activity_impl::glue: NativeWindowCreated: 0x7af4a80041b0 -- 0x7af3d7fd56d0
+11-26 15:45:18.757 19467 19487 I streamtube: gpui_mobile::android::jni: MainEvent::InitWindow
+11-26 15:45:18.757 19467 19487 I streamtube: gpui_mobile::android::jni: deferred: InitWindow (iter=4)
+11-26 15:45:18.757 19467 19487 I streamtube: gpui_mobile::android::jni: InitWindow: 720×1600
+11-26 15:45:18.757 19467 19467 D streamtube: android_activity::activity_impl::glue: NativeWindowResized: 0x7af4a80041b0 -- 0x7af3d7fd56d0
+11-26 15:45:18.757 19467 19487 D streamtube: gpui_mobile::android::window: Skipping high frame rate request on API 35
+11-26 15:45:18.757 19467 19487 I streamtube: gpui_mobile::android::window: AndroidWindow::new — 720×1600 scale=1.8
+11-26 15:45:18.758 19467 19467 D streamtube: android_activity::activity_impl::glue: ContentRectChanged: 0x7af4a80041b0 -- 0x7ffc4ae227f0
+11-26 15:45:18.811 19467 19487 D streamtube: wgpu_hal::vulkan::instance: InstanceFlags::VALIDATION requested, but unable to find layer: VK_LAYER_KHRONOS_validation
+11-26 15:45:18.838 19467 19487 D streamtube: wgpu_hal::vulkan::instance: Instance version: 0x403000
+11-26 15:45:18.838 19467 19487 D streamtube: wgpu_hal::vulkan::instance: Enabling debug utils
+11-26 15:45:18.838 19467 19487 D streamtube: wgpu_hal::vulkan::instance: Enabling device properties2
+11-26 15:45:18.838 19467 19487 D streamtube: wgpu_core::instance: Instance::new: created Vulkan backend
+11-26 15:45:18.840 19467 19487 D streamtube: wgpu_hal::gles::egl: Client extensions: [
+11-26 15:45:18.840 19467 19487 D streamtube:     "EGL_ANDROID_GLES_layers",
+11-26 15:45:18.840 19467 19487 D streamtube:     "EGL_ANGLE_platform_angle",
+11-26 15:45:18.840 19467 19487 D streamtube:     "EGL_EXT_client_extensions",
+11-26 15:45:18.840 19467 19487 D streamtube:     "EGL_KHR_platform_android",
+11-26 15:45:18.840 19467 19487 D streamtube: ]
+11-26 15:45:18.840 19467 19487 D streamtube: wgpu_hal::gles::egl: No (or unknown) windowing system (Some(Android(AndroidDisplayHandle)), Some(Instance(Dynamic(Library@0x69b6677a29d21163)))) and EGL_MESA_platform_surfaceless not available. Using default platform
+11-26 15:45:18.847 19467 19487 D streamtube: wgpu_hal::gles::egl: Display vendor "Android", version (1, 4)
+11-26 15:45:18.847 19467 19487 D streamtube: wgpu_hal::gles::egl: Display extensions: [
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_front_buffer_auto_refresh",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_get_native_client_buffer",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_presentation_time",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_EXT_surface_CTA861_3_metadata",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_EXT_surface_SMPTE2086_metadata",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_get_all_proc_addresses",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_swap_buffers_with_damage",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_get_frame_timestamps",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_image_native_buffer",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_native_fence_sync",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_ANDROID_recordable",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_create_context",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_fence_sync",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_gl_texture_2D_image",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_image",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_image_base",
+11-26 15:45:18.847 19467 19487 D streamtube:     "EGL_KHR_wait_sync",
+11-26 15:45:18.847 19467 19487 D streamtube: ]
+11-26 15:45:18.847 19467 19487 D streamtube: wgpu_hal::gles::egl: 	EGL surface: -srgb
+11-26 15:45:18.847 19467 19487 D streamtube: wgpu_hal::gles::egl: 	Trying presentation
+11-26 15:45:18.847 19467 19487 I streamtube: wgpu_hal::gles::egl: EGL says it can present to the window but not natively
+11-26 15:45:18.847 19467 19487 D streamtube: wgpu_hal::gles::egl: 	EGL context: +debug KHR
+11-26 15:45:18.849 19467 19487 D streamtube: wgpu_hal::gles::egl: 	EGL context: -robust access
+11-26 15:45:18.854 19467 19487 D streamtube: wgpu_core::instance: Instance::new: created Gl backend
+11-26 15:45:18.875 19467 19487 D streamtube: wgpu_core::instance: Adapter AdapterInfo { name: "AMD Radeon 820M Graphics (RADV GFX1153)", vendor: 4098, device: 6402, device_type: IntegratedGpu, device_pci_bus_id: "", driver: "radv", driver_info: "Mesa 26.2.5", backend: Vulkan, subgroup_min_size: 32, subgroup_max_size: 64, transient_saves_memory: Some(false), limit_bucket: None }
+11-26 15:45:18.918 19467 19487 D streamtube: wgpu_hal::gles::adapter: Vendor: Google (AMD)
+11-26 15:45:18.918 19467 19487 D streamtube: wgpu_hal::gles::adapter: Renderer: Android Emulator OpenGL ES Translator (AMD Radeon 820M Graphics (radeonsi, gfx1153, ACO, DRM 3.64, 7.3.3-200.fc44.x86_64))
+11-26 15:45:18.918 19467 19487 D streamtube: wgpu_hal::gles::adapter: Version: OpenGL ES 3.1 (4.6 (Core Profile) Mesa 26.2.5)
+11-26 15:45:18.919 19467 19487 D streamtube: wgpu_hal::gles::adapter: SL version: OpenGL ES GLSL ES 3.10
+11-26 15:45:18.919 19467 19487 D streamtube: wgpu_hal::gles::adapter: Supported GL Extensions: {
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_EGL_image_external",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_native_sync_v3",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_native_sync_v2",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_has_shared_slots_host_memory_allocator",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_CHECKSUM_HELPER_v1",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_APPLE_texture_format_BGRA8888",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_vertex_half_float",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_null_optional_strings",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_hwc_color_transform",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_async_queue_submit",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_dma_v1",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_texture_half_float",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_compressed_paletted_texture",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_EGL_image_external_essl3",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_texture_float",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_host_composition_v1",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_hwc_multi_configs",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_queue_submit_with_commands",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_EXT_color_buffer_half_float",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_texture_npot",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_deferred_vulkan_commands",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_YUV_Cache",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_sync_buffer_data",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_element_index_uint",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_gles_max_version_3_1",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_depth24",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_depth32",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_compressed_ETC1_RGB8_texture",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_EXT_texture_format_BGRA8888",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_texture_half_float_linear",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_depth_texture",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_async_qsri",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_EGL_image",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_texture_float_linear",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_EGL_sync",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_native_sync_v4",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_create_resources_with_requirements",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_ignored_handles",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_rgb8_rgba8",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_EXT_debug_marker",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_free_memory_sync",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_packed_depth_stencil",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_EXT_color_buffer_float",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_direct_mem",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_vulkan_shader_float16_int8",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_EXT_robustness",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_host_composition_v2",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_OES_vertex_array_object",
+11-26 15:45:18.919 19467 19487 D streamtube:     "GL_KHR_texture_compression_astc_ldr",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_read_color_buffer_dma",
+11-26 15:45:18.919 19467 19487 D streamtube:     "ANDROID_EMU_host_side_tracing",
+11-26 15:45:18.919 19467 19487 D streamtube: }
+11-26 15:45:18.929 19467 19487 D streamtube: wgpu_core::instance: Adapter AdapterInfo { name: "Android Emulator OpenGL ES Translator (AMD Radeon 820M Graphics (radeonsi, gfx1153, ACO, DRM 3.64, 7.3.3-200.fc44.x86_64))", vendor: 4098, device: 0, device_type: Other, device_pci_bus_id: "", driver: "", driver_info: "OpenGL ES 3.1 (4.6 (Core Profile) Mesa 26.2.5)", backend: Gl, subgroup_min_size: 4, subgroup_max_size: 128, transient_saves_memory: None, limit_bucket: None }
+11-26 15:45:18.929 19467 19487 I streamtube: gpui_wgpu::wgpu_context: Found 2 GPU adapter(s):
+11-26 15:45:18.929 19467 19487 I streamtube: gpui_wgpu::wgpu_context:   - AMD Radeon 820M Graphics (RADV GFX1153) (vendor=0x1002, device=0x1902, backend=Vulkan, type=IntegratedGpu)
+11-26 15:45:18.929 19467 19487 I streamtube: gpui_wgpu::wgpu_context:   - Android Emulator OpenGL ES Translator (AMD Radeon 820M Graphics (radeonsi, gfx1153, ACO, DRM 3.64, 7.3.3-200.fc44.x86_64)) (vendor=0x1002, device=0x0000, backend=Gl, type=Other)
+11-26 15:45:18.929 19467 19487 I streamtube: gpui_wgpu::wgpu_context: Testing adapter: AMD Radeon 820M Graphics (RADV GFX1153) (Vulkan)...
+11-26 15:45:18.942 19467 19487 W streamtube: wgpu_core::instance: Missing downlevel flags: DownlevelFlags(SURFACE_VIEW_FORMATS)
+11-26 15:45:18.942 19467 19487 W streamtube: The underlying API or device in use does not support enough features to be a fully compliant implementation of WebGPU. A subset of the features can still be used. If you are running this program on native and not in a browser and wish to limit the features you use to the supported subset, call Adapter::downlevel_properties or Device::downlevel_properties to get a listing of the features the current platform supports.
+11-26 15:45:18.942 19467 19487 W streamtube: wgpu_core::instance: DownlevelCapabilities {
+11-26 15:45:18.942 19467 19487 W streamtube:     flags: DownlevelFlags(
+11-26 15:45:18.942 19467 19487 W streamtube:         COMPUTE_SHADERS | FRAGMENT_WRITABLE_STORAGE | INDIRECT_EXECUTION | BASE_VERTEX | READ_ONLY_DEPTH_STENCIL | NON_POWER_OF_TWO_MIPMAPPED_TEXTURES | CUBE_ARRAY_TEXTURES | COMPARISON_SAMPLERS | INDEPENDENT_BLEND | VERTEX_STORAGE | ANISOTROPIC_FILTERING | FRAGMENT_STORAGE | MULTISAMPLED_SHADING | DEPTH_TEXTURE_AND_BUFFER_COPIES | WEBGPU_TEXTURE_FORMAT_SUPPORT | BUFFER_BINDINGS_NOT_16_BYTE_ALIGNED | UNRESTRICTED_INDEX_BUFFER | FULL_DRAW_INDEX_UINT32 | DEPTH_BIAS_CLAMP | VIEW_FORMATS | UNRESTRICTED_EXTERNAL_TEXTURE_COPIES | NONBLOCKING_QUERY_RESOLVE | SHADER_F16_IN_F32 | MSL2_1 | TEXTURE_COMPRESSION,
+11-26 15:45:18.942 19467 19487 W streamtube:     ),
+11-26 15:45:18.942 19467 19487 W streamtube:     limits: DownlevelLimits,
+11-26 15:45:18.942 19467 19487 W streamtube:     shader_model: Sm5,
+11-26 15:45:18.942 19467 19487 W streamtube: }
+11-26 15:45:18.942 19467 19487 D streamtube: wgpu_hal::vulkan::adapter: VK_EXT_memory_budget is not available.
+11-26 15:45:18.942 19467 19487 D streamtube: wgpu_hal::vulkan::adapter: Supported extensions: ["VK_KHR_swapchain"]
+11-26 15:45:18.951 19467 19487 D streamtube: naga::front: Resolving [0] = Literal(AbstractInt(6)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [1] = Literal(I32(6)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [2] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [3] = Literal(I32(0)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [4] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [5] = Literal(I32(0)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [6] = Literal(AbstractInt(1)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [7] = Literal(I32(1)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [8] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [0] = GlobalVariable([1]) : Value(Pointer { base: [2], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [1] = GlobalVariable([2]) : Value(Pointer { base: [3], space: Immediate })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [2] = AccessIndex { base: [1], index: 0 } : Value(Pointer { base: [0], space: Immediate })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [3] = Load { pointer: [2] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [4] = Access { base: [0], index: [3] } : Value(Pointer { base: [0], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [5] = Load { pointer: [4] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [6] = GlobalVariable([1]) : Value(Pointer { base: [2], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [7] = GlobalVariable([2]) : Value(Pointer { base: [3], space: Immediate })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [8] = AccessIndex { base: [7], index: 0 } : Value(Pointer { base: [0], space: Immediate })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [9] = Load { pointer: [8] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [10] = Literal(AbstractInt(1)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, {AbstractInt}
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [11] = Literal(U32(1)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [12] = Binary { op: Add, left: [9], right: [11] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [13] = Access { base: [6], index: [12] } : Value(Pointer { base: [0], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [14] = Load { pointer: [13] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [15] = GlobalVariable([1]) : Value(Pointer { base: [2], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [16] = GlobalVariable([2]) : Value(Pointer { base: [3], space: Immediate })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [17] = AccessIndex { base: [16], index: 0 } : Value(Pointer { base: [0], space: Immediate })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [18] = Load { pointer: [17] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [19] = Literal(AbstractInt(2)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, {AbstractInt}
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [20] = Literal(U32(2)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [21] = Binary { op: Add, left: [18], right: [20] } : Handle([0])
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [22] = Access { base: [15], index: [21] } : Value(Pointer { base: [0], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.952 19467 19487 D streamtube: naga::front: Resolving [23] = Load { pointer: [22] } : Handle([0])
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32, u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [24] = Compose { ty: [4], components: [[5], [14], [23]] } : Handle([4])
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [25] = Literal(U32(65535)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [26] = AccessIndex { base: [24], index: 0 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [27] = Binary { op: Greater, left: [26], right: [25] } : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [28] = Unary { op: LogicalNot, expr: [27] } : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [29] = Literal(Bool(true)) : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [30] = LocalVariable([0]) : Value(Pointer { base: [5], space: Function })
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [31] = AccessIndex { base: [24], index: 1 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [32] = Binary { op: Greater, left: [31], right: [25] } : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [33] = LocalVariable([0]) : Value(Pointer { base: [5], space: Function })
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [34] = Load { pointer: [33] } : Handle([5])
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [35] = Unary { op: LogicalNot, expr: [34] } : Handle([5])
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [36] = Literal(Bool(true)) : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [37] = LocalVariable([1]) : Value(Pointer { base: [5], space: Function })
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [38] = AccessIndex { base: [24], index: 2 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [39] = Binary { op: Greater, left: [38], right: [25] } : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [40] = LocalVariable([1]) : Value(Pointer { base: [5], space: Function })
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [41] = Load { pointer: [40] } : Handle([5])
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [42] = GlobalVariable([0]) : Value(Pointer { base: [1], space: Storage { access: StorageAccess(LOAD | STORE) } })
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [43] = Literal(U32(0)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [44] = Literal(U32(0)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [45] = Literal(U32(0)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.953 19467 19487 D streamtube: naga::front: Resolving [46] = Literal(U32(0)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [47] = Literal(U32(0)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [48] = Literal(U32(0)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32, u32, u32, u32, u32
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [49] = Compose { ty: [1], components: [[43], [44], [45], [46], [47], [48]] } : Handle([1])
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [50] = GlobalVariable([0]) : Value(Pointer { base: [1], space: Storage { access: StorageAccess(LOAD | STORE) } })
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [51] = AccessIndex { base: [24], index: 0 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [52] = AccessIndex { base: [24], index: 1 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [53] = AccessIndex { base: [24], index: 2 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [54] = AccessIndex { base: [24], index: 0 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [55] = AccessIndex { base: [24], index: 1 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [56] = AccessIndex { base: [24], index: 2 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32, u32, u32, u32, u32
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [57] = Compose { ty: [1], components: [[51], [52], [53], [54], [55], [56]] } : Handle([1])
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [9] = Literal(I32(0)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::front: Resolving [10] = Literal(AbstractInt(1)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.954 19467 19487 D streamtube: naga::valid::interface: var GlobalVariable { name: Some("dst"), space: Storage { access: StorageAccess(LOAD | STORE) }, binding: Some(ResourceBinding { group: 0, binding: 0 }), ty: [1], init: None, memory_decorations: MemoryDecorations(0x0) }
+11-26 15:45:18.954 19467 19487 D streamtube: naga::valid::interface: var GlobalVariable { name: Some("src"), space: Storage { access: StorageAccess(LOAD) }, binding: Some(ResourceBinding { group: 1, binding: 0 }), ty: [2], init: None, memory_decorations: MemoryDecorations(0x0) }
+11-26 15:45:18.954 19467 19487 D streamtube: naga::valid::interface: var GlobalVariable { name: Some("offset"), space: Immediate, binding: None, ty: [3], init: None, memory_decorations: MemoryDecorations(0x0) }
+11-26 15:45:18.954 19467 19487 D streamtube: naga::valid::function: var LocalVariable { name: None, ty: [5], init: None }
+11-26 15:45:18.954 19467 19487 D streamtube: naga::valid::function: var LocalVariable { name: None, ty: [5], init: None }
+11-26 15:45:18.956 19467 19487 D streamtube: naga::front: Resolving [0] = Literal(AbstractInt(1073741823)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [1] = Literal(U32(1073741823)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [2] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [3] = Literal(I32(0)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [4] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [5] = Literal(I32(0)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [6] = Literal(AbstractInt(1)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [7] = Literal(I32(1)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [8] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [9] = Literal(I32(0)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [10] = Literal(AbstractInt(2)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [11] = Literal(I32(2)) : Value(Scalar(Scalar { kind: Sint, width: 4 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [12] = Literal(AbstractInt(0)) : Value(Scalar(Scalar { kind: AbstractInt, width: 8 }))
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [0] = FunctionArgument(0) : Handle([1])
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [1] = FunctionArgument(1) : Handle([1])
+11-26 15:45:18.957 19467 19487 D streamtube: naga::front: Resolving [2] = Binary { op: ShiftRight, left: [0], right: [1] } : Handle([1])
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [3] = Literal(U32(1)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [4] = Binary { op: And, left: [2], right: [3] } : Handle([1])
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [5] = Literal(U32(1)) : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [6] = Binary { op: Equal, left: [4], right: [5] } : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [0] = FunctionArgument(0) : Handle([6])
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [1] = AccessIndex { base: [0], index: 0 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [2] = GlobalVariable([0]) : Value(Pointer { base: [3], space: Immediate })
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [3] = AccessIndex { base: [2], index: 1 } : Value(Pointer { base: [1], space: Immediate })
+11-26 15:45:18.958 19467 19487 D streamtube: naga::front: Resolving [4] = Load { pointer: [3] } : Handle([1])
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [5] = Binary { op: GreaterEqual, left: [1], right: [4] } : Value(Scalar(Scalar { kind: Bool, width: 1 }))
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [6] = GlobalVariable([1]) : Value(Pointer { base: [4], space: Storage { access: StorageAccess(LOAD) } })
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [7] = GlobalVariable([0]) : Value(Pointer { base: [3], space: Immediate })
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [8] = AccessIndex { base: [7], index: 0 } : Value(Pointer { base: [1], space: Immediate })
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [9] = Load { pointer: [8] } : Handle([1])
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [10] = AccessIndex { base: [0], index: 0 } : Value(Scalar(Scalar { kind: Uint, width: 4 }))
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front::wgsl::lower::conversion: wgsl automatic_conversion_consensus: u32, u32
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front::wgsl::lower::conversion:     consensus: u32
+11-26 15:45:18.959 19467 19487 D streamtube: naga::front: Resolving [11] = Binary { op: Add, left: [9], right: [10] } : Handle([1])

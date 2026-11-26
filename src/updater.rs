@@ -230,7 +230,7 @@ pub fn install(cx: &mut App) {
     };
     let Some(Asset { name, url, size, sha256 }) = rel.asset.clone().filter(|_| cfg!(windows)) else {
         // no installer for this platform: the release page has the downloads
-        let _ = open::that(&rel.page);
+        let _ = crate::platform::open(&rel.page);
         return;
     };
     set_status(Status::Downloading(rel.clone(), 0.0), cx);

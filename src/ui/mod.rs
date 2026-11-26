@@ -181,7 +181,7 @@ impl Global for Toasts {}
 /// shares or other programs' URL schemes.
 pub fn open_web(url: &str) {
     if is_web_url(url) {
-        let _ = open::that(url.trim());
+        let _ = crate::platform::open(url.trim());
     }
 }
 

@@ -1,0 +1,39 @@
+[package]
+name = "streamtube-android"
+version = "0.7.5-alpha.2"
+edition = "2024"
+description = "Android shell for Stream Tube: gpui-mobile bootstrap with a real Home feed and search"
+license = "MIT"
+publish = false
+
+# `libstreamtube_android.so` is loaded by NativeActivity (GpuiActivity) and
+# must keep this exact crate name.
+[lib]
+crate-type = ["cdylib"]
+
+[target.'cfg(target_os = "android")'.dependencies]
+# host builds compile the crate to nothing (#![cfg(target_os = "android")]),
+# so every dependency lives behind the target gate
+streamtube-core = { path = "../streamtube-core" }
+gpui-kit = "0.10"
+# Audited in docs/evidence/B1: same gpui-pre/gpui-pre-wgpu =0.3.12 snapshot the
+# desktop uses; Android renders through wgpu 30.0.2 (Vulkan). The six features
+# are all empty `cfg` gates — no extra Rust dependencies (default-features
+# would pull ~30 unneeded package modules).
+gpui-mobile = { git = "https://github.com/itsbalamurali/gpui-mobile", rev = "635b7e7", default-features = false, features = [
+    "video_player",
+    "media_session",
+    "deeplink",
+    "file_selector",
+    "clipboard",
+    "notifications",
+] }
+# Same version gpui-mobile already resolves (jni 0.22 in Cargo.lock): the
+# StreamTubeSurfaceView native callbacks (Java → Rust surface events) are
+# declared directly against the jni crate. No new packages enter the lock.
+jni = "0.22"
+anyhow = "1"
+futures = "0.3"
+log = "0.4"
+android_logger = "0.15"
+android-activity = { version = "0.6", features = ["native-activity"] }

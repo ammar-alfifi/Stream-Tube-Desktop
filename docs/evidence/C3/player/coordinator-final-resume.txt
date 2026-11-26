@@ -1,0 +1,17 @@
+11-26 18:15:20.083 12783 12783 I StreamTubeSurfaceView: surfaceCreated id=1 valid=true
+11-26 18:15:20.083 12783 12783 I streamtube: streamtube_android::player: StreamTubeSurfaceView surfaceCreated: view_id=1
+11-26 18:15:21.774 12783 12826 I streamtube: streamtube_android::player: loadfile ok
+11-26 18:15:23.179 12783 12826 I streamtube: streamtube_android::player: mpv file loaded after 3126 ms: vo=Some("gpu") hwdec=Some("mediacodec") video-format=Some("h264") ao=None audio-codec=Some("Opus (Opus Interactive Audio Codec)")
+11-26 18:15:23.179 12783 12826 I streamtube: streamtube_android::player: time-pos 0.0s / 651.0s (paused=false)
+11-26 18:15:28.832 12783 12826 I streamtube: streamtube_android::player: time-pos 5.0s / 650.9s (paused=false)
+11-26 18:15:30.824 12783 12826 I streamtube: streamtube_android::player: time-pos 10.0s / 650.9s (paused=false)
+11-26 18:15:34.139 12783 12826 I streamtube: streamtube_android::player: time-pos 13.3s / 650.9s (paused=false)
+11-26 18:15:49.563 12783 12826 I streamtube: streamtube_android::player: time-pos 18.3s / 650.9s (paused=false)
+11-26 18:15:51.432 12783 12783 I StreamTubeSurfaceView: surfaceDestroyed id=1
+11-26 18:15:51.433 12783 12783 I streamtube: streamtube_android::player: StreamTubeSurfaceView surfaceDestroyed: view_id=1
+11-26 18:15:52.690 12783 12783 I StreamTubeSurfaceView: surfaceCreated id=1 valid=true
+11-26 18:15:52.690 12783 12783 I streamtube: streamtube_android::player: StreamTubeSurfaceView surfaceCreated: view_id=1
+11-26 18:15:53.950 12783 12826 I streamtube: streamtube_android::player: mpv file loaded after 33896 ms: vo=Some("gpu") hwdec=Some("mediacodec") video-format=Some("h264") ao=None audio-codec=Some("Opus (Opus Interactive Audio Codec)")
+11-26 18:15:53.950 12783 12826 I streamtube: streamtube_android::player: time-pos 0.0s / 650.9s (paused=false)
+11-26 18:15:59.173 12783 12826 I streamtube: streamtube_android::player: time-pos 5.0s / 650.9s (paused=false)
+11-26 18:16:01.212 12783 12826 I streamtube: streamtube_android::player: time-pos 10.0s / 650.9s (paused=false)

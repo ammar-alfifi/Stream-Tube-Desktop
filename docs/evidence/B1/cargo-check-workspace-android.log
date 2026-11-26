@@ -1,0 +1,222 @@
+   Compiling serde_derive v1.0.229
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerovec-derive v0.11.7
+   Compiling displaydoc v0.2.7
+   Compiling zerocopy-derive v0.8.64
+   Compiling futures-macro v0.3.34
+   Compiling tracing-attributes v0.1.31
+   Compiling ref-cast-impl v1.0.27
+   Compiling schemars_derive v1.2.3
+    Checking futures-util v0.3.34
+    Checking futures-executor v0.3.34
+    Checking ref-cast v1.0.27
+    Checking moxcms v0.8.1
+    Checking futures v0.3.34
+   Compiling ring v0.17.14
+    Checking flume v0.12.0
+    Checking uuid v1.29.3
+    Checking tracing v0.1.44
+    Checking gpui-pre-ztracing v0.3.12
+   Compiling gpui-pre v0.3.12
+   Compiling num-traits v0.2.19
+    Checking heapless v0.9.4
+   Compiling dirs v6.0.0
+    Checking icu_segmenter_data v2.4.0
+    Checking blocking v1.7.0
+   Compiling derive_more-impl v2.1.1
+   Compiling encoding_rs_io v0.1.8
+   Compiling mime_guess v2.0.5
+   Compiling strum_macros v0.28.0
+    Checking sha2 v0.11.1
+    Checking lyon_algorithms v1.0.22
+    Checking gpui-pre-util v0.3.12
+    Checking png v0.18.1
+    Checking http-body v1.1.0
+    Checking signal-hook-registry v1.4.8
+    Checking async-lock v3.5.0
+    Checking qoi v0.4.1
+    Checking rgb v0.8.53
+   Compiling arc-swap v1.9.5
+   Compiling enumn v0.1.14
+   Compiling html5ever v0.27.0
+    Checking zerocopy v0.8.64
+    Checking zerofrom v0.1.8
+    Checking yoke v0.8.4
+    Checking zerovec v0.11.9
+    Checking tinystr v0.8.5
+    Checking potential_utf v0.1.6
+    Checking icu_locale_core v2.4.0
+    Checking serde v1.0.229
+    Checking zerotrie v0.2.5
+    Checking icu_collections v2.4.0
+    Checking chrono v0.4.45
+    Checking ppv-lite86 v0.2.21
+    Checking icu_provider v2.4.0
+    Checking rand_chacha v0.9.0
+    Checking half v2.7.1
+    Checking rand v0.9.5
+    Checking icu_properties v2.4.0
+    Checking icu_normalizer v2.4.0
+   Compiling serde_spanned v0.6.9
+   Compiling toml_datetime v0.6.11
+    Checking string_cache v0.8.9
+    Checking exr v1.74.3
+    Checking markup5ever v0.12.1
+   Compiling toml_edit v0.22.27
+    Checking idna_adapter v1.2.2
+    Checking idna v1.1.0
+    Checking tiff v0.11.3
+    Checking url v2.5.9
+    Checking icu_locale_fallback v2.4.0
+    Checking serde_urlencoded v0.7.1
+   Compiling gpui-pre-derive-refineable v0.3.12
+   Compiling profiling-procmacros v1.0.18
+   Compiling thiserror-impl v2.0.21
+   Compiling pin-project-internal v1.2.0
+    Checking schemars v1.2.3
+    Checking smol_str v0.3.7
+    Checking bstr v1.14.0
+    Checking web-time v1.1.0
+   Compiling inotify-sys v0.1.8
+    Checking unicode-segmentation v1.13.3
+   Compiling base64 v0.23.1
+    Checking rustc-hash v2.1.3
+    Checking svg_fmt v0.4.5
+   Compiling mime v0.3.18
+   Compiling nohash-hasher v0.2.0
+    Checking zeroize v1.9.2
+   Compiling itertools v0.11.0
+    Checking rustls-pki-types v1.16.0
+   Compiling serde-saphyr v1.3.0
+    Checking gpui-pre-refineable v0.3.12
+   Compiling triomphe v0.1.17
+    Checking etagere v0.2.15
+    Checking gpui-pre-collections v0.3.12
+   Compiling serde_json v1.0.154
+    Checking gpui-pre-scheduler v0.3.12
+    Checking globset v0.4.21
+    Checking gpui-pre-shared-string v0.3.12
+    Checking profiling v1.0.18
+    Checking image v0.25.10
+   Compiling toml v0.8.23
+    Checking gpui-pre-http-client v0.3.12
+    Checking icu_segmenter v2.4.0
+    Checking strum v0.28.0
+    Checking accesskit v0.24.1
+    Checking resvg v0.46.0
+    Checking async-signal v0.2.14
+    Checking lyon v1.0.19
+   Compiling shellexpand v3.1.2
+    Checking gpui-pre-sum-tree v0.3.12
+   Compiling rust-embed-utils v8.14.0
+   Compiling gpui-pre-macros v0.3.12
+    Checking taffy v0.15.1
+    Checking regex v1.13.2
+    Checking itertools v0.14.0
+    Checking derive_more v2.1.1
+    Checking spin v0.10.1
+    Checking num_cpus v1.17.0
+    Checking getrandom v0.2.17
+    Checking pollster v0.4.0
+    Checking inventory v0.3.25
+    Checking seahash v4.1.0
+    Checking waker-fn v1.2.0
+   Compiling gpui-kit-assets v0.10.0
+    Checking untrusted v0.9.0
+   Compiling normpath v1.5.2
+    Checking raw-window-handle v0.6.2
+   Compiling rust-i18n-support v4.2.4
+   Compiling rust-i18n v4.2.4
+   Compiling rust-embed-impl v8.14.0
+    Checking async-process v2.5.0
+    Checking xml5ever v0.18.1
+    Checking async-fs v2.2.0
+    Checking async-net v2.0.0
+    Checking fluent-uri v0.1.4
+    Checking async-executor v1.14.1
+   Compiling serde_repr v0.1.21
+    Checking base62 v2.2.6
+   Compiling glob v0.3.4
+    Checking thiserror v2.0.21
+    Checking unicode-id v0.3.7
+    Checking str_indices v0.4.4
+   Compiling paste v1.0.15
+   Compiling rustls v0.23.46
+    Checking ropey v2.0.0-beta.1
+    Checking markdown v1.0.0
+    Checking smol v2.0.2
+    Checking markup5ever_rcdom v0.3.0
+    Checking inotify v0.11.5
+    Checking httparse v1.10.1
+    Checking rustls-webpki v0.103.17
+   Compiling libsqlite3-sys v0.40.0
+    Checking itertools v0.13.0
+    Checking pin-project v1.2.0
+    Checking notify-types v2.3.1
+   Compiling enum-iterator-derive v1.5.0
+    Checking mio v1.2.5
+    Checking rust-embed v8.14.0
+    Checking sys-locale v0.3.2
+    Checking instant v0.1.13
+   Compiling gpui-component v0.10.0
+    Checking unicode-linebreak v0.1.5
+    Checking subtle v2.6.1
+    Checking ureq-proto v0.7.1
+    Checking notify v8.2.2
+    Checking lsp-types v0.97.0
+    Checking webpki-roots v1.0.12
+    Checking similar v2.7.0
+   Compiling gpui-component-macros v0.10.0
+    Checking is-docker v0.2.0
+    Checking hashlink v0.12.2
+    Checking fallible-iterator v0.3.0
+    Checking fallible-streaming-iterator v0.1.9
+    Checking unicode-width v0.2.3
+    Checking utf8-zero v0.8.1
+    Checking option-ext v0.2.0
+    Checking dirs-sys v0.5.0
+    Checking ureq v3.5.2
+    Checking is-wsl v0.4.0
+    Checking sha1 v0.11.0
+   Compiling streamtube v0.7.5-alpha (/home/ammar/projects/Stream-Tube-Desktop)
+    Checking open v5.4.5
+    Checking libloading v0.9.1
+   Compiling rust-i18n-macro v4.2.4
+    Checking enum-iterator v2.3.0
+    Checking gpui-base v0.10.0
+    Checking gpui-kit v0.10.0
+    Checking rusqlite v0.43.0
+    Checking streamtube-core v0.7.5-alpha (/home/ammar/projects/Stream-Tube-Desktop/crates/streamtube-core)
+error[E0425]: cannot find function `application` in crate `gpui_kit`
+   --> src/main.rs:86:15
+    |
+ 86 |     gpui_kit::application()
+    |               ^^^^^^^^^^^ not found in `gpui_kit`
+    |
+note: found an item that was configured out
+   --> /home/ammar/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gpui-kit-0.10.0/src/lib.rs:200:19
+    |
+199 | #[cfg(not(any(target_os = "ios", target_os = "android")))]
+    |          ----------------------------------------------- the item is gated here
+200 | pub use platform::application;
+    |                   ^^^^^^^^^^^
+
+warning: unused variable: `cx`
+  --> src/ui/app_icon.rs:89:14
+   |
+89 | pub fn apply(cx: &mut App) {
+   |              ^^ help: if this is intentional, prefix it with an underscore: `_cx`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `accent`
+  --> src/ui/app_icon.rs:90:9
+   |
+90 |     let accent = icon_accent(crate::store::settings_snapshot().accent);
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_accent`
+
+For more information about this error, try `rustc --explain E0425`.
+warning: `streamtube` (bin "streamtube") generated 2 warnings
+error: could not compile `streamtube` (bin "streamtube") due to 1 previous error; 2 warnings emitted
+EXIT=101

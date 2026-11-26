@@ -1,0 +1,8 @@
+11-26 15:45:18.605 19467 19487 I streamtube: streamtube_android: android_main: entered
+11-26 15:45:18.607 19467 19487 I streamtube: streamtube_android: store initialised at /data/user/0/dev.streamtube.android/files
+11-26 15:45:18.720 19467 19487 I streamtube: streamtube_android: android_main: platform initialised
+11-26 15:45:19.356 19467 19487 I streamtube: gpui_mobile::android::jni: window opened — id=0x7af3d7fd56d0 scale=1.8
+11-26 15:45:19.363 19467 19487 I streamtube: streamtube_android: deeplink: streamtube://search?q=mars%20rover
+11-26 15:45:19.364 19467 19487 I streamtube: streamtube_android: search_for: "mars rover"
+11-26 15:45:19.372 19467 19487 I streamtube: streamtube_android: window opened — Home is loading
+11-26 15:45:19.372 19467 19487 I streamtube: gpui_mobile::android::jni: NATIVE_INITIALIZED = true

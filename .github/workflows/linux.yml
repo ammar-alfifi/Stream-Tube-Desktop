@@ -3,7 +3,7 @@ name: Linux build
 on:
   push:
     branches: [main]
-    paths: ["src/**", "Cargo.toml", "Cargo.lock", "build.rs", "packaging/linux/**", ".github/workflows/linux.yml"]
+    paths: ["src/**", "crates/**", "Cargo.toml", "Cargo.lock", "build.rs", "packaging/linux/**", ".github/workflows/linux.yml"]
   # every pull request is built and its packages checked (no path filter, so the
   # required check always reports)
   pull_request:
@@ -15,6 +15,32 @@ permissions:
   contents: read
 
 jobs:
+  android-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix: android-core
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --version 4.1.2 --locked
+
+      - name: Check core for Android
+        run: |
+          export LIBCLANG_PATH="$(dirname "$(find "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt" -name libclang.so -print -quit)")"
+          test -f "$LIBCLANG_PATH/libclang.so"
+          cargo ndk -t arm64-v8a -P 26 check -p streamtube-core --locked
+
   linux:
     # the oldest supported Ubuntu keeps the binary compatible with older glibc
     runs-on: ubuntu-22.04
@@ -35,6 +61,9 @@ jobs:
 
       - name: Build
         run: cargo build --release --locked
+
+      - name: Test
+        run: cargo test --workspace --release --locked
 
       - name: Package
         id: pkg

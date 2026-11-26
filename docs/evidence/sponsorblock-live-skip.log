@@ -1,0 +1,5 @@
+   Compiling streamtube-core v0.7.5-alpha (/home/ammar/projects/Stream-Tube-Desktop/crates/streamtube-core)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.57s
+     Running `target/debug/examples/sponsorblock_probe`
+video=W9Ikfr0TKCo live_segments=1
+category=sponsor action=skip start=82.143 end=98.102 playhead=83.143 => SKIP to 98.102

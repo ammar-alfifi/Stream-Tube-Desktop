@@ -1,0 +1,39 @@
+Stream Tube Android — desktop screenshot parity
+Date: 2026-11-26
+Device: emulator-5554, API 35, x86_64, 720x1600
+
+Reference: docs/screenshots/{home,search,live,settings,sponsorblock,stats}.png on main.
+
+Implemented:
+  - Two-tone StreamTube wordmark, no extra BETA badge.
+  - Horizontally scrolling category rail: Popular is active; Music/Gaming/News/
+    Sports/Live/Learning run real searches.
+  - Search result-type chips All/Videos/Channels/Playlists/Movies map to
+    YouTube's SearchFilter.kind and re-run the active query; the query is written
+    back into the search field for deep links and chip searches.
+  - Search results use the desktop list geometry: 16:9 artwork on the leading
+    edge, title/metadata/channel/description beside it.
+  - Duration badge or red LIVE badge on every thumbnail.
+  - Player channel row with avatar, Subscribe/Subscribed and Like/Liked pills;
+    both persist through streamtube-core's local store.
+  - Four real bottom destinations: Home, Subscriptions, Library, Search.
+    Subscriptions reads the cached local subscription feed; Library reads local
+    watch history, which the player now records and updates every five seconds.
+  - Bottom navigation respects the Android gesture inset (24dp).
+  - Two-line clamped titles/descriptions with ellipsis.
+
+Verification:
+  - cargo ndk -t arm64-v8a -t x86_64 -P 26 check -p streamtube-android --locked: OK.
+  - Debug APK built and installed.
+  - Home renders category rail, cards, four-item navigation.
+  - streamtube://search?q=rust renders the query, filter chips, and Rust results
+    as horizontal rows.
+  - Second feed video played from 0:00 past 0:10 with the channel/action row;
+    first source was refused by YouTube's range probe (PO-token limit).
+  - Library opened after playback and listed the watched video.
+  - Bottom labels sit above the gesture bar.
+  - Crash buffer empty.
+  - PSS after Home+Search+Player: 145404-198513 KB across runs.
+
+Not in the Android build yet:
+  - Dedicated Live/Chat, Settings, SponsorBlock settings, and Stats panels.

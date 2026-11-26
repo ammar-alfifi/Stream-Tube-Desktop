@@ -1,0 +1,21 @@
+video: dQw4w9WgXcQ
+--- web fallback steps ---
+watch page: 1544729 bytes in 1.066836781s
+playability: OK (1.072614155s so far)
+player JS: https://www.youtube.com/s/player/b485e332/player_es6.vflset/en_US/base.js (2721418 bytes, 319.410585ms)
+formats to decipher: 1 (1 with signatureCipher)
+challenges: 1 sig, 1 n
+EJS solve: 13.98976232s
+sig iAE0s2JYwAAIgIaS1qf4MvrJV5E9vRWFfhBG_NqyETK6SYaQvOy3J4m0CIdLn2IoImwpEUSwPALQHnCAmzh3gwMzAJV257nxTsUyZ -> AE0s2JYwRAIgIaS1qf4MvrJV5E9vdWFfhBG_NqyiTK6SYaQvOy3J4m0CIELn2IoImwpEUSwPALQHnCAmzh3gwMzAJV257nxTsUyZ
+n epZs22AOLUsfedzkV -> 6mzCyIQLrKKTTg
+deciphered formats: 0 video, 0 audio, 1 muxed, hls=false in 15.383985609s total
+
+title: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) | live: false | hls: false | video 0 audio 0 muxed 1
+  itag 18 video/mp4 640x360 360p (url 1221 bytes)
+--- range check (bytes=0-1023) ---
+itag 18 url head: https://rr7---sn-nuj-wxqy.googlevideo.com/videoplayback?expire=1795716059&ei=ex8Ia4XzFNDQmLAP5uPr2A0&ip=151.255.40.183&i
+HTTP 206
+Content-Type: video/mp4
+Content-Range: bytes 0-1023/11829048
+Bytes read: 1024
+RESULT: PASS (deciphered web URL serves a real byte range)

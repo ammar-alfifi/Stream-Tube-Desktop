@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App's dark theme surface color — matches the shell's BG (0x0f0f0f),
+         the same background the desktop's dark palette uses. -->
+    <color name="gpui_surface">#FF0F0F0F</color>
+    <color name="ic_launcher_background">#D5001F</color>
+</resources>

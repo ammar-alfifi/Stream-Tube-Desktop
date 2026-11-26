@@ -1,0 +1,21 @@
+== YouTube M3 Home baseline ==
+  Native Heap   123980   123864        0        0   127992   159780   128382    26692
+         Native Heap:   123864                         127992
+           TOTAL PSS:   180762            TOTAL RSS:   291744      TOTAL SWAP (KB):        0
+== reload 1 ==
+  Native Heap   127680   127576        0        0   131664   160292   128757    27195
+         Native Heap:   127576                         131664
+           TOTAL PSS:   185987            TOTAL RSS:   298220      TOTAL SWAP (KB):        0
+== reload 2 ==
+  Native Heap   125536   125432        0        0   129520   160000   128481    27315
+         Native Heap:   125432                         129520
+           TOTAL PSS:   182640            TOTAL RSS:   294932      TOTAL SWAP (KB):        0
+== reload 3 ==
+  Native Heap   129460   129356        0        0   133444   160012   128480    27467
+         Native Heap:   129356                         133444
+           TOTAL PSS:   186568            TOTAL RSS:   298860      TOTAL SWAP (KB):        0
+== Home after player Back ==
+  Native Heap   123124   123020        0        0   127108   161840   129252    28611
+         Native Heap:   123020                         127108
+           TOTAL PSS:   189213            TOTAL RSS:   301740      TOTAL SWAP (KB):        0
+== crash buffer ==

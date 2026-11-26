@@ -1,0 +1,10 @@
+11-26 17:20:07.518  9225  9244 I streamtube: streamtube_android::player: mpv file loaded after 5469 ms: vo=Some("gpu") hwdec=Some("mediacodec") video-format=Some("h264") ao=None audio-codec=Some("Opus (Opus Interactive Audio Codec)") path=edl://!no_clip;!no_chapters;%75%[LOCAL_PROXY_URL]/s/1;!new_stream;
+11-26 17:20:07.518  9225  9244 I streamtube: streamtube_android::player: time-pos 0.0s / 1503.0s (paused=false)
+11-26 17:20:13.046  9225  9244 I streamtube: streamtube_android::player: time-pos 5.0s / 1502.3s (paused=false)
+11-26 17:20:18.002  9225  9244 I streamtube: streamtube_android::player: time-pos 10.0s / 1502.3s (paused=false)
+11-26 17:20:23.072  9225  9244 I streamtube: streamtube_android::player: time-pos 15.0s / 1502.3s (paused=false)
+11-26 17:20:24.516  9225  9244 I streamtube: streamtube_android::player: player: pause toggled -> true
+11-26 17:21:07.684  9225  9244 I streamtube: streamtube_android::player: player: back requested
+11-26 17:21:07.724  9225  9244 I streamtube: streamtube_android::player: player: dropped (mpv terminated, surface ref released)
+11-26 17:21:07.726  9225  9225 I StreamTubeSurfaceView: surfaceDestroyed id=1
+11-26 17:21:07.726  9225  9225 I streamtube: streamtube_android::player: StreamTubeSurfaceView surfaceDestroyed: view_id=1
