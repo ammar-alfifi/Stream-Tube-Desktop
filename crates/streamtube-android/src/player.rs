@@ -29,6 +29,7 @@ use std::sync::{
 use futures::StreamExt;
 use futures::channel::mpsc::UnboundedSender;
 use gpui::{EventEmitter, px, rgb};
+use gpui_kit::component::Icon;
 use gpui_kit::component::scroll::ScrollableElement;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
@@ -733,6 +734,12 @@ impl Render for Player {
                                 .child(
                                     div()
                                         .id("back")
+                                        .role(gpui_kit::Role::Button)
+                                        .aria_label("Back")
+                                        .tab_index(0)
+                                        .focus_visible(|style| {
+                                            style.border_1().border_color(rgb(TEXT))
+                                        })
                                         .size(px(48.))
                                         .flex_none()
                                         .flex()
@@ -746,7 +753,15 @@ impl Render for Player {
                                             log::info!("player: back requested");
                                             cx.emit(PlayerEvent::Back);
                                         }))
-                                        .child("←"),
+                                        .child(
+                                            Icon::new(if streamtube_core::i18n::language().is_rtl() {
+                                                gpui_kit::assets::IconName::ArrowRight
+                                            } else {
+                                                gpui_kit::assets::IconName::ArrowLeft
+                                            })
+                                                .size(px(22.))
+                                                .text_color(rgb(TEXT)),
+                                        ),
                                 )
                                 .child(
                                     div()
@@ -837,6 +852,12 @@ impl Render for Player {
                                         .child(
                                             div()
                                                 .id("seek-back")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label("Seek back 10 seconds")
+                                                .tab_index(0)
+                                                .focus_visible(|style| {
+                                                    style.border_2().border_color(rgb(TEXT))
+                                                })
                                                 .size(px(56.))
                                                 .flex()
                                                 .items_center()
@@ -853,6 +874,18 @@ impl Render for Player {
                                         .child(
                                             div()
                                                 .id("play-pause")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label(if matches!(&self.phase, Phase::Loading) {
+                                                    "Loading"
+                                                } else if self.paused {
+                                                    "Play"
+                                                } else {
+                                                    "Pause"
+                                                })
+                                                .tab_index(0)
+                                                .focus_visible(|style| {
+                                                    style.border_2().border_color(rgb(TEXT))
+                                                })
                                                 .size(px(64.))
                                                 .flex()
                                                 .items_center()
@@ -867,16 +900,30 @@ impl Render for Player {
                                                     this.toggle_pause(cx)
                                                 }))
                                                 .child(if matches!(&self.phase, Phase::Loading) {
-                                                        "…"
-                                                    } else if self.paused {
-                                                        "Play"
+                                                    div()
+                                                        .text_size(px(20.))
+                                                        .child("…")
+                                                        .into_any_element()
+                                                } else {
+                                                    Icon::new(if self.paused {
+                                                        gpui_kit::assets::IconName::Play
                                                     } else {
-                                                        "Pause"
-                                                    }),
+                                                        gpui_kit::assets::IconName::Pause
+                                                    })
+                                                    .size(px(26.))
+                                                    .text_color(rgb(ON_ACCENT))
+                                                    .into_any_element()
+                                                }),
                                         )
                                         .child(
                                             div()
                                                 .id("seek-fwd")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label("Seek forward 10 seconds")
+                                                .tab_index(0)
+                                                .focus_visible(|style| {
+                                                    style.border_2().border_color(rgb(TEXT))
+                                                })
                                                 .size(px(56.))
                                                 .flex()
                                                 .items_center()
@@ -898,8 +945,14 @@ impl Render for Player {
                                         .child(
                                             div()
                                                 .id("restart")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label("Restart video")
+                                                .tab_index(0)
+                                                .focus_visible(|style| {
+                                                    style.border_2().border_color(rgb(TEXT))
+                                                })
                                                 .flex_1()
-                                                .h(px(44.))
+                                                .h(px(48.))
                                                 .flex()
                                                 .items_center()
                                                 .justify_center()
@@ -945,8 +998,14 @@ impl Render for Player {
                                         .child(
                                             div()
                                                 .id("seek-fwd-60")
+                                                .role(gpui_kit::Role::Button)
+                                                .aria_label("Seek forward 60 seconds")
+                                                .tab_index(0)
+                                                .focus_visible(|style| {
+                                                    style.border_2().border_color(rgb(TEXT))
+                                                })
                                                 .flex_1()
-                                                .h(px(44.))
+                                                .h(px(48.))
                                                 .flex()
                                                 .items_center()
                                                 .justify_center()
@@ -982,10 +1041,14 @@ impl Render for Player {
     }
 }
 
-fn progress_bar(progress: f64) -> Div {
+fn progress_bar(progress: f64) -> Stateful<Div> {
     div()
         .w_full()
         .h(px(4.))
+        .id("playback-progress")
+        .role(gpui_kit::Role::ProgressIndicator)
+        .aria_label("Playback progress")
+        .aria_numeric_value(progress.clamp(0.0, 1.0))
         .rounded_full()
         .bg(rgb(SURFACE_VARIANT))
         .child(

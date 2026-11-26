@@ -1,0 +1,23 @@
+Stream Tube Android — YouTube-inspired Material 3 UI verification
+Date: 2026-11-26
+Device: emulator-5554, API 35, x86_64, 720x1600
+
+Build:
+  cargo ndk -t arm64-v8a -t x86_64 -P 26 check -p streamtube-android --locked
+  cargo ndk -t arm64-v8a -t x86_64 -P 26 -o android/app/src/main/jniLibs build -p streamtube-android --locked
+  cd android && ./gradlew assembleDebug --console=plain
+  Result: success.
+
+Runtime:
+  - Home renders compact top bar, SVG icons, 16:9 cards, duration badges and avatars.
+  - Search pill focuses directly on tap; white focus border and Arabic IME shown.
+  - Player opens with hwdec=mediacodec and vo=gpu; one Pause tap produced one toggle.
+  - Back released the mpv surface without a crash.
+  - Crash buffer empty.
+
+Memory (debug):
+  Home baseline: 180762 KB PSS
+  Reload 1: 185987 KB
+  Reload 2: 182640 KB
+  Reload 3: 186568 KB
+  Home after player Back: 189213 KB

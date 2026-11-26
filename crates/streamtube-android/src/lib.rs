@@ -24,13 +24,18 @@ extern crate gpui_mobile;
 
 mod player;
 
+gpui_kit::assets::icon_assets!(
+    pub AndroidIcons,
+    [House, Search, ArrowRight, ArrowLeft, Play, Pause, Close]
+);
+
 use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use gpui_kit::component::Root;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::component::scroll::ScrollableElement;
+use gpui_kit::component::{Icon, Root};
 use gpui_kit::prelude::*;
 use gpui_kit::*;
 use gpui_kit::{ImgResourceLoader, Resource};
@@ -84,6 +89,7 @@ fn android_main(app: android_activity::AndroidApp) {
     };
 
     Application::with_platform(shared.into_rc())
+        .with_assets(AndroidIcons)
         .with_http_client(UreqHttp::new())
         .run(|cx: &mut App| {
             gpui_kit::init(cx);
@@ -170,18 +176,18 @@ pub fn blocking<T: Send + 'static>(
 
 // ───────────────────────────── palette ─────────────────────────────
 
-// Material 3 dark color roles (baseline purple scheme).
-pub(crate) const BG: u32 = 0x131318;
-pub(crate) const SURFACE: u32 = 0x1d1b20;
-pub(crate) const SURFACE_HIGH: u32 = 0x29272f;
-pub(crate) const SURFACE_VARIANT: u32 = 0x49454f;
-pub(crate) const TEXT: u32 = 0xe6e1e5;
-pub(crate) const TEXT2: u32 = 0xcac4d0;
-pub(crate) const ACCENT: u32 = 0xd0bcff;
-pub(crate) const ON_ACCENT: u32 = 0x381e72;
-pub(crate) const PRIMARY_CONTAINER: u32 = 0x4f378b;
-pub(crate) const ON_PRIMARY_CONTAINER: u32 = 0xeadcff;
-pub(crate) const ERROR: u32 = 0xf2b8b5;
+// Material 3 dark color roles with a YouTube-inspired red accent.
+pub(crate) const BG: u32 = 0x0f0f0f;
+pub(crate) const SURFACE: u32 = 0x0f0f0f;
+pub(crate) const SURFACE_HIGH: u32 = 0x272727;
+pub(crate) const SURFACE_VARIANT: u32 = 0x303030;
+pub(crate) const TEXT: u32 = 0xf1f1f1;
+pub(crate) const TEXT2: u32 = 0xaaaaaa;
+pub(crate) const ACCENT: u32 = 0xd5001f;
+pub(crate) const ON_ACCENT: u32 = 0xffffff;
+pub(crate) const PRIMARY_CONTAINER: u32 = 0x3c1518;
+pub(crate) const ON_PRIMARY_CONTAINER: u32 = 0xffdad6;
+pub(crate) const ERROR: u32 = 0xffb4ab;
 const MAX_FEED_ITEMS: usize = 18;
 
 // ───────────────────────────── the shell ─────────────────────────────
@@ -211,15 +217,17 @@ struct Shell {
 
 impl Shell {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let search = cx.new(|cx| InputState::new(window, cx).placeholder("Search YouTube"));
+        let search = cx.new(|cx| InputState::new(window, cx).placeholder("Search videos"));
         cx.subscribe_in(
             &search,
             window,
-            |this, state, ev: &InputEvent, window, cx| {
-                if let InputEvent::PressEnter { .. } = ev {
+            |this, state, ev: &InputEvent, window, cx| match ev {
+                InputEvent::PressEnter { .. } => {
                     let q = state.read(cx).value().trim().to_string();
                     this.search_for(&q, window, cx);
                 }
+                InputEvent::Focus | InputEvent::Blur => cx.notify(),
+                InputEvent::Change => {}
             },
         )
         .detach();
@@ -254,10 +262,30 @@ impl Shell {
         items
             .iter()
             .filter_map(|item| match item {
-                Item::Video(v) => Some(v.thumbnail.clone()),
-                Item::Channel(c) => c.avatar.clone(),
-                Item::Playlist(p) => p.thumbnail.clone(),
+                Item::Video(v) => Some(vec![
+                    v.thumbnail.clone(),
+                    if store::settings_snapshot().hide_channel_avatars {
+                        String::new()
+                    } else {
+                        v.channel_avatar
+                            .as_deref()
+                            .map(streamtube_core::api::json::limit_avatar)
+                            .unwrap_or_default()
+                    },
+                ]),
+                Item::Channel(c) => {
+                    Some(vec![if store::settings_snapshot().hide_channel_avatars {
+                        String::new()
+                    } else {
+                        c.avatar
+                            .as_deref()
+                            .map(streamtube_core::api::json::limit_avatar)
+                            .unwrap_or_default()
+                    }])
+                }
+                Item::Playlist(p) => Some(vec![p.thumbnail.clone().unwrap_or_default()]),
             })
+            .flatten()
             .filter(|url| !url.is_empty())
             .collect()
     }
@@ -458,29 +486,28 @@ impl Shell {
 }
 
 impl Render for Shell {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Track C3: an open player takes over the window; the feed stays
         // cached underneath, so Back is instant.
         if let Some(player) = self.player.clone() {
             return div().size_full().child(player);
         }
-        let (title, subtitle) = match &self.mode {
-            Mode::Home => ("Home".to_string(), "Recommended for you".to_string()),
-            Mode::Search(q) => ("Search results".to_string(), q.clone()),
-        };
+        let search_focused = self.search.read(cx).focus_handle(cx).is_focused(window);
         let searching = matches!(self.mode, Mode::Search(_));
         let body: AnyElement = match &self.items {
             Load::Loading => loading_state().into_any_element(),
             Load::Error(e) => error_state(e, cx).into_any_element(),
             Load::Ready(items) => div()
                 .flex_1()
+                .min_h_0()
                 .overflow_y_scrollbar()
                 .child(
                     div()
                         .flex()
                         .flex_col()
                         .gap_4()
-                        .p_4()
+                        .px_2()
+                        .pb_4()
                         .children(items.iter().map(|item| item_row(item, cx))),
                 )
                 .into_any_element(),
@@ -495,32 +522,39 @@ impl Render for Shell {
                 div()
                     .flex()
                     .flex_col()
-                    .gap_3()
+                    .flex_none()
+                    .gap_2()
                     .px_4()
                     .pt_3()
                     .pb_2()
                     .child(
                         div()
+                            .h(px(40.))
                             .flex()
                             .items_center()
-                            .justify_between()
+                            .gap_2()
                             .child(
                                 div()
+                                    .size(px(32.))
+                                    .flex_none()
                                     .flex()
-                                    .flex_col()
-                                    .gap_0p5()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(px(8.))
+                                    .bg(rgb(ACCENT))
                                     .child(
-                                        div()
-                                            .text_size(px(22.))
-                                            .font_weight(FontWeight::BOLD)
-                                            .child("Stream Tube"),
+                                        Icon::new(gpui_kit::assets::IconName::Play)
+                                            .size(px(20.))
+                                            .text_color(rgb(ON_ACCENT)),
                                     )
-                                    .child(
-                                        div()
-                                            .text_size(px(12.))
-                                            .text_color(rgb(TEXT2))
-                                            .child("Open source video player"),
-                                    ),
+                                    .into_any_element(),
+                            )
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .text_size(px(20.))
+                                    .font_weight(FontWeight::BOLD)
+                                    .child("Stream Tube"),
                             )
                             .child(
                                 div()
@@ -539,59 +573,88 @@ impl Render for Shell {
                             .h(px(48.))
                             .flex()
                             .items_center()
-                            .gap_2()
-                            .px_2()
+                            .gap_1()
                             .pl_4()
+                            .pr_1()
                             .rounded_full()
                             .bg(rgb(SURFACE_HIGH))
                             .border_1()
-                            .border_color(rgb(SURFACE_VARIANT))
+                            .border_color(if search_focused {
+                                rgb(TEXT)
+                            } else {
+                                rgb(SURFACE_HIGH)
+                            })
+                            .id("search-field")
+                            .cursor_pointer()
+                            .on_click(
+                                cx.listener(|this, _, window, cx| this.focus_search(window, cx)),
+                            )
                             .child(
-                                div()
-                                    .flex_1()
-                                    .min_w_0()
-                                    .child(Input::new(&self.search).cleanable(true)),
+                                div().flex_1().min_w_0().child(
+                                    Input::new(&self.search)
+                                        .appearance(false)
+                                        .cleanable(true)
+                                        .prefix(
+                                            Icon::new(gpui_kit::assets::IconName::Search)
+                                                .size(px(20.))
+                                                .text_color(rgb(TEXT2)),
+                                        ),
+                                ),
                             )
                             .child(
                                 div()
                                     .id("search-btn")
+                                    .role(gpui_kit::Role::Button)
+                                    .aria_label("Search")
+                                    .tab_index(0)
+                                    .size(px(48.))
                                     .flex_none()
-                                    .px_4()
-                                    .py_2()
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
                                     .rounded_full()
-                                    .text_sm()
-                                    .font_weight(FontWeight::MEDIUM)
                                     .cursor_pointer()
                                     .bg(rgb(ACCENT))
-                                    .text_color(rgb(ON_ACCENT))
+                                    .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
                                     .on_click(cx.listener(|this, _, window, cx| {
                                         let q = this.search.read(cx).value().trim().to_string();
                                         this.search_for(&q, window, cx);
                                     }))
-                                    .child("Go"),
+                                    .child(
+                                        Icon::new(if i18n::language().is_rtl() {
+                                            gpui_kit::assets::IconName::ArrowLeft
+                                        } else {
+                                            gpui_kit::assets::IconName::ArrowRight
+                                        })
+                                        .size(px(24.))
+                                        .text_color(rgb(ON_ACCENT)),
+                                    ),
                             ),
                     ),
             )
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .px_4()
-                    .pb_2()
-                    .child(
-                        div()
-                            .text_size(px(18.))
-                            .font_weight(FontWeight::BOLD)
-                            .child(title),
-                    )
-                    .child(
-                        div()
-                            .text_size(px(12.))
-                            .text_color(rgb(TEXT2))
-                            .child(subtitle),
-                    ),
-            )
+            .when(searching, |d| {
+                d.child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .flex_none()
+                        .gap_1()
+                        .px_4()
+                        .pb_2()
+                        .child(
+                            div()
+                                .text_size(px(18.))
+                                .font_weight(FontWeight::BOLD)
+                                .child("Search results"),
+                        )
+                        .child(div().text_size(px(12.)).text_color(rgb(TEXT2)).child(
+                            match &self.mode {
+                                Mode::Search(q) => q.clone(),
+                                Mode::Home => String::new(),
+                            },
+                        )),
+                )
+            })
             .child(body)
             .child(bottom_nav(searching, cx))
     }
@@ -605,35 +668,56 @@ fn loading_state() -> impl IntoElement {
             .flex()
             .flex_col()
             .gap_4()
-            .p_4()
+            .px_2()
+            .pb_4()
             .children((0..4).map(|_| {
                 div()
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .p_3()
-                    .rounded_md()
-                    .bg(rgb(SURFACE))
+                    .pb_2()
                     .child(
                         div()
                             .w_full()
                             .aspect_ratio(16. / 9.)
-                            .rounded_md()
+                            .rounded(px(12.))
                             .bg(rgb(SURFACE_HIGH)),
                     )
                     .child(
                         div()
-                            .w(relative(0.82))
-                            .h(px(14.))
-                            .rounded_full()
-                            .bg(rgb(SURFACE_HIGH)),
-                    )
-                    .child(
-                        div()
-                            .w(relative(0.48))
-                            .h(px(10.))
-                            .rounded_full()
-                            .bg(rgb(SURFACE_VARIANT)),
+                            .flex()
+                            .items_start()
+                            .gap_3()
+                            .px_2()
+                            .child(
+                                div()
+                                    .size(px(36.))
+                                    .flex_none()
+                                    .rounded_full()
+                                    .bg(rgb(SURFACE_HIGH)),
+                            )
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .flex()
+                                    .flex_col()
+                                    .gap_2()
+                                    .pt_1()
+                                    .child(
+                                        div()
+                                            .w(relative(0.88))
+                                            .h(px(14.))
+                                            .rounded_full()
+                                            .bg(rgb(SURFACE_HIGH)),
+                                    )
+                                    .child(
+                                        div()
+                                            .w(relative(0.52))
+                                            .h(px(10.))
+                                            .rounded_full()
+                                            .bg(rgb(SURFACE_VARIANT)),
+                                    ),
+                            ),
                     )
             })),
     )
@@ -677,7 +761,7 @@ fn error_state(message: &str, cx: &mut Context<Shell>) -> Div {
                                     .gap_1()
                                     .rounded_full()
                                     .bg(rgb(ERROR))
-                                    .text_color(rgb(ON_ACCENT))
+                                    .text_color(rgb(0x690005))
                                     .text_size(px(20.))
                                     .font_weight(FontWeight::BOLD)
                                     .child("!"),
@@ -703,6 +787,10 @@ fn error_state(message: &str, cx: &mut Context<Shell>) -> Div {
         .child(
             div()
                 .id("retry")
+                .role(gpui_kit::Role::Button)
+                .aria_label("Retry")
+                .tab_index(0)
+                .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
                 .flex_none()
                 .w_full()
                 .max_w(px(420.))
@@ -734,6 +822,10 @@ fn bottom_nav(searching: bool, cx: &mut Context<Shell>) -> Div {
         .child(
             div()
                 .id("nav-home")
+                .role(gpui_kit::Role::Button)
+                .aria_label("Home")
+                .tab_index(0)
+                .focus_visible(|style| style.border_1().border_color(rgb(TEXT)))
                 .flex_1()
                 .flex()
                 .items_center()
@@ -761,12 +853,25 @@ fn bottom_nav(searching: bool, cx: &mut Context<Shell>) -> Div {
                         })
                         .text_sm()
                         .font_weight(FontWeight::MEDIUM)
+                        .child(
+                            Icon::new(gpui_kit::assets::IconName::House)
+                                .size(px(22.))
+                                .text_color(if home_active {
+                                    rgb(ON_PRIMARY_CONTAINER)
+                                } else {
+                                    rgb(TEXT2)
+                                }),
+                        )
                         .child("Home"),
                 ),
         )
         .child(
             div()
                 .id("nav-search")
+                .role(gpui_kit::Role::Button)
+                .aria_label("Search")
+                .tab_index(0)
+                .focus_visible(|style| style.border_1().border_color(rgb(TEXT)))
                 .flex_1()
                 .flex()
                 .items_center()
@@ -794,6 +899,15 @@ fn bottom_nav(searching: bool, cx: &mut Context<Shell>) -> Div {
                         })
                         .text_sm()
                         .font_weight(FontWeight::MEDIUM)
+                        .child(
+                            Icon::new(gpui_kit::assets::IconName::Search)
+                                .size(px(22.))
+                                .text_color(if searching {
+                                    rgb(ON_PRIMARY_CONTAINER)
+                                } else {
+                                    rgb(TEXT2)
+                                }),
+                        )
                         .child("Search"),
                 ),
         )
@@ -814,19 +928,7 @@ fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
             .bg(rgb(SURFACE))
             .border_1()
             .border_color(rgb(SURFACE_VARIANT))
-            .child(match &c.avatar {
-                Some(u) => img(u.clone())
-                    .size_10()
-                    .flex_none()
-                    .rounded_full()
-                    .into_any_element(),
-                None => div()
-                    .size_10()
-                    .flex_none()
-                    .rounded_full()
-                    .bg(rgb(SURFACE))
-                    .into_any_element(),
-            })
+            .child(avatar_element(c.avatar.as_deref(), &c.name, px(40.)))
             .child(
                 div()
                     .flex()
@@ -892,11 +994,60 @@ fn item_row(item: &Item, cx: &mut Context<Shell>) -> AnyElement {
     }
 }
 
+fn avatar_element(url: Option<&str>, name: &str, size: Pixels) -> AnyElement {
+    if store::settings_snapshot().hide_channel_avatars {
+        return div().size(size).flex_none().into_any_element();
+    }
+    let initial = name
+        .chars()
+        .next()
+        .unwrap_or('?')
+        .to_uppercase()
+        .to_string();
+    match url.filter(|url| !url.is_empty()) {
+        Some(url) => img(streamtube_core::api::json::limit_avatar(url))
+            .size(size)
+            .flex_none()
+            .rounded_full()
+            .object_fit(ObjectFit::Cover)
+            .with_fallback({
+                let initial = initial.clone();
+                move || {
+                    div()
+                        .size_full()
+                        .rounded_full()
+                        .bg(rgb(SURFACE_VARIANT))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .text_color(rgb(TEXT))
+                        .child(initial.clone())
+                        .into_any_element()
+                }
+            })
+            .into_any_element(),
+        None => div()
+            .size(size)
+            .flex_none()
+            .rounded_full()
+            .bg(rgb(SURFACE_VARIANT))
+            .flex()
+            .items_center()
+            .justify_center()
+            .text_color(rgb(TEXT))
+            .child(initial)
+            .into_any_element(),
+    }
+}
+
+fn video_avatar(v: &VideoItem) -> AnyElement {
+    avatar_element(v.channel_avatar.as_deref(), &v.channel_name, px(36.))
+}
+
 fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
     let meta = [
         v.views_text.as_deref().unwrap_or(""),
         v.published_text.as_deref().unwrap_or(""),
-        v.duration_text.as_deref().unwrap_or(""),
     ]
     .iter()
     .filter(|s| !s.is_empty())
@@ -908,45 +1059,86 @@ fn video_row(v: &VideoItem, cx: &mut Context<Shell>) -> Stateful<Div> {
         .w_full()
         .flex()
         .flex_col()
-        .rounded_md()
-        .bg(rgb(SURFACE))
-        .border_1()
-        .border_color(rgb(SURFACE_VARIANT))
-        .overflow_hidden()
+        .gap_2()
+        .pb_2()
         // gpui-pre synthesizes ClickEvent::Touch from taps, so on_click works
         // where on_mouse_down does not.
         .id(v.id.clone())
+        .role(gpui_kit::Role::Button)
+        .aria_label(v.title.clone())
+        .tab_index(0)
+        .focus_visible(|style| style.border_2().border_color(rgb(TEXT)))
         .cursor_pointer()
-        .on_click(
-            cx.listener(move |this, _, window, cx| this.open_video(video.clone(), window, cx)),
-        )
+        .on_click(cx.listener({
+            let video = video.clone();
+            move |this, _, window, cx| this.open_video(video.clone(), window, cx)
+        }))
         .child(
-            img(v.thumbnail.clone())
+            div()
+                .relative()
                 .w_full()
                 .aspect_ratio(16. / 9.)
-                .object_fit(ObjectFit::Cover)
-                .into_any_element(),
+                .rounded(px(12.))
+                .overflow_hidden()
+                .bg(rgb(SURFACE_HIGH))
+                .child(
+                    img(v.thumbnail.clone())
+                        .w_full()
+                        .h_full()
+                        .object_fit(ObjectFit::Cover)
+                        .into_any_element(),
+                )
+                .children(
+                    v.duration_text
+                        .as_deref()
+                        .filter(|s| !s.is_empty())
+                        .map(|d| {
+                            div()
+                                .absolute()
+                                .right_2()
+                                .bottom_2()
+                                .px_2()
+                                .py_1()
+                                .rounded(px(4.))
+                                .bg(rgb(0xe0000000))
+                                .text_color(rgb(0xffffff))
+                                .text_size(px(11.))
+                                .font_weight(FontWeight::MEDIUM)
+                                .child(d.to_string())
+                        }),
+                ),
         )
         .child(
             div()
                 .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
+                .items_start()
+                .gap_3()
+                .px_2()
+                .child(video_avatar(v))
                 .child(
                     div()
-                        .text_size(px(15.))
-                        .font_weight(FontWeight::MEDIUM)
-                        .child(v.title.clone()),
-                )
-                .child(
-                    div()
-                        .text_size(px(12.))
-                        .text_color(rgb(TEXT2))
-                        .child(v.channel_name.clone()),
-                )
-                .when(!meta.is_empty(), |d| {
-                    d.child(div().text_size(px(11.)).text_color(rgb(TEXT2)).child(meta))
-                }),
+                        .flex_1()
+                        .min_w_0()
+                        .flex()
+                        .flex_col()
+                        .gap_1()
+                        .child(
+                            div()
+                                .h(px(44.))
+                                .overflow_hidden()
+                                .text_size(px(16.))
+                                .font_weight(FontWeight::MEDIUM)
+                                .child(v.title.clone()),
+                        )
+                        .child(
+                            div()
+                                .text_size(px(12.))
+                                .text_color(rgb(TEXT2))
+                                .child(v.channel_name.clone()),
+                        )
+                        .when(!meta.is_empty(), |d| {
+                            d.child(div().text_size(px(11.)).text_color(rgb(TEXT2)).child(meta))
+                        }),
+                ),
         )
 }
